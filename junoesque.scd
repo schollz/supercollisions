@@ -1,28 +1,56 @@
 (
+SynthDef("lfo1",{
+	arg out=0,freq=1;
+	Out.kr(out,SinOsc.kr(freq));
+}).add;
+)
+
+
+(
 SynthDef("junoesque",{
+	// basic parameters
 	arg freq=220,attack=0.03,decay=0.1,sustain=0.5,release=1.0,amp=1.0,
+	mod1,mod2,mod3,
+	lfo1,
+	// special parameters
 	sub=0.9,pulse=0.5,saw=0.9,noise=0.0,gate=1,detuning=0.2;
-	var env, snd, tempGate;
+	var env,  snd, tempGate;
 	freq=freq;
 	//tempGate=ToggleFF.kr(1-TDelay.kr(DC.kr(1),attack+decay));
-	env=EnvGen.ar(Env.adsr(attack,decay,sustain,release),gate:gate,doneAction:Done.freeSelf);
+	env=EnvGen.ar(
+		Env.adsr(attack,decay,sustain,release),
+		gate:gate,doneAction:Done.freeSelf
+	);
 	snd = Array.fill(2,{
 		arg i;
-		var freq2=freq+((freq-((freq.cpsmidi+detuning).midicps))*i);
+		var freq2=freq+((freq-((freq.cpsmidi+detuning+mod2).midicps))*i);
 		var snd2=SawDPW.ar(freq2,mul:saw/3);
 		snd2=snd2+PulseDPW.ar(freq2/2,mul:sub/3);
 		snd2=snd2+PulseDPW.ar(freq2,mul:pulse/3);
 		snd2
 	});
 	snd = Mix.ar(snd);
-	snd=snd+WhiteNoise.ar(noise);
+	snd=snd + (WhiteNoise.ar(noise+mod2)*DelayN.ar(env,1,attack+decay));
 	// snd = RLPF.ar(snd,MouseX.kr(60,8000,1),1.0);
-	snd = MoogFF.ar(snd,300,2);
-	snd = HPF.ar(snd,80);
-	snd = snd * amp * env;
+	snd = MoogFF.ar(snd,Select.kr(
+		mod1<0.5,
+		[8000,LinExp.kr(mod1,0,0.5,20,8000)]
+	),2);
+	snd = HPF.ar(snd,Select.kr(
+		mod1>0.5,
+		[8000,LinExp.kr(mod1,0.5,1,80,20000)]
+	));
+	snd = snd * amp * env * K2A.ar(In.kr(lfo1));
+	snd = snd.tanh; 
 	DetectSilence.ar(snd,doneAction:2);
 	Out.ar(0,Pan2.ar(snd));
 }).add;
+)
+
+// define the lfos
+(
+~lfo1=Bus.control(s);
+Synth("lfo1",[\out,~lfo1]);
 )
 
 // ~10% cpu on Dell
