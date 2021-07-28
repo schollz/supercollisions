@@ -1,6 +1,6 @@
 (
 SynthDef("junoesque",{
-	arg freq=220,attack=0.03,decay=0.1,sustain=0.5,release=1.0,
+	arg freq=220,attack=0.03,decay=0.1,sustain=0.5,release=1.0,amp=1.0,
 	sub=0.9,pulse=0.5,saw=0.9,noise=0.0,gate=1,detuning=0.2;
 	var env, snd, tempGate;
 	freq=freq;
@@ -19,7 +19,7 @@ SynthDef("junoesque",{
 	// snd = RLPF.ar(snd,MouseX.kr(60,8000,1),1.0);
 	snd = MoogFF.ar(snd,300,2);
 	snd = HPF.ar(snd,80);
-	snd = snd *env;
+	snd = snd * amp * env;
 	DetectSilence.ar(snd,doneAction:2);
 	Out.ar(0,Pan2.ar(snd));
 }).add;
@@ -44,3 +44,28 @@ x.set(\freq,60.midicps);
 y.set(\freq,62.midicps);
 z.set(\freq,65.midicps);
 )
+
+
+// midi controller
+(
+var notes, on, off;
+
+MIDIClient.init;
+MIDIIn.connectAll;
+
+notes = Array.newClear(128);    // array has one slot per possible MIDI note
+
+on = MIDIFunc.noteOn({ |veloc, num, chan, src|
+    notes[num] = Synth("junoesque", [\freq, num.midicps,
+        \amp, veloc * 0.00315]);
+});
+
+off = MIDIFunc.noteOff({ |veloc, num, chan, src|
+    notes[num].set(\gate,0);
+});
+
+q = { on.free; off.free; };
+)
+
+// when done:
+q.value;
