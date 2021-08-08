@@ -2,14 +2,14 @@
 (
 SynthDef("samplePlayer6", {
 	arg out=0, bufnum=0, rate=1, rateLag=0,start=0, end=1, reset=0, t_trig=1,
-	loops=1, amp=0.5, resetFreq=1, loopRate=1,loopRange=0.5;
+	loops=1, amp=0.5, resetFreq=1, loopRate=1,loopRange=0.5,loopOffset=0.0;
 	var snd,snd2,pos,pos2,frames,duration,env;
 	var startA,endA,startB,endB,resetA,resetB,crossfade,aOrB;
 
 	// THESE LINES ARE AMAZING
 	// INSPIRED FROM the b-roll: https://www.youtube.com/watch?v=g6xdPRGHLLg
 	t_trig=Trig.kr(Impulse.kr(resetFreq));
-	reset=LinLin.kr(SinOsc.kr(loopRate,0,loopRange),-1,1,0,1);
+	reset=Clip.kr(LinLin.kr(SinOsc.kr(loopRate,0,loopRange),-1,1,0,1)+loopOffset);
 
 	aOrB=ToggleFF.kr(t_trig);
 	startA=Latch.kr(start,aOrB);
@@ -72,7 +72,7 @@ SynthDef("samplePlayer6", {
 x=Synth("samplePlayer6", [\bufnum, ~buffer]); // will start playing
 
 // try different combos...
-x.set(\resetFreq,2,\loopRate,0.5,\loopRange,0.1)
-x.set(\resetFreq,1,\loopRate,0.7,\loopRange,0.4)
-x.set(\resetFreq,4,\loopRate,0.2,\loopRange,0.01)
-x.set(\resetFreq,0.5,\loopRate,0.2,\loopRange,0.5)
+x.set(\resetFreq,2,\loopRate,0.5,\loopRange,0.1,\loopOffset,0)
+x.set(\resetFreq,1,\loopRate,0.7,\loopRange,0.4,\loopOffset,-0.1)
+x.set(\resetFreq,2,\loopRate,0.2,\loopRange,0.01,\loopOffset,0.1)
+x.set(\resetFreq,0.5,\loopRate,0.2,\loopRange,0.5,\loopOffset,0.7)
