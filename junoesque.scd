@@ -9,11 +9,11 @@ SynthDef("lfo1",{
 (
 SynthDef("junoesque",{
 	// basic parameters
-	arg freq=220,attack=0.03,decay=0.1,sustain=0.5,release=1.0,amp=1.0,
-	mod1,mod2,mod3,
+	arg freq=220,attack=0.05,decay=0.1,sustain=0.5,release=1.0,amp=1.0,
+	mod1=0.0,mod2=0.5,mod3=0.5,
 	lfo1,
 	// special parameters
-	sub=0.9,pulse=0.5,saw=0.9,noise=0.0,gate=1,detuning=0.2;
+	sub=0.9,pulse=0.9,saw=0.4,noise=0.2,gate=1,detuning=0.2;
 	var env,  snd, tempGate;
 	freq=freq;
 	//tempGate=ToggleFF.kr(1-TDelay.kr(DC.kr(1),attack+decay));
@@ -23,25 +23,27 @@ SynthDef("junoesque",{
 	);
 	snd = Array.fill(2,{
 		arg i;
-		var freq2=freq+((freq-((freq.cpsmidi+detuning+mod2).midicps))*i);
+		var freq2=freq+((freq-((freq.cpsmidi+detuning).midicps))*i);
 		var snd2=SawDPW.ar(freq2,mul:saw/3);
 		snd2=snd2+PulseDPW.ar(freq2/2,mul:sub/3);
 		snd2=snd2+PulseDPW.ar(freq2,mul:pulse/3);
 		snd2
 	});
 	snd = Mix.ar(snd);
-	snd=snd + (WhiteNoise.ar(noise+mod2)*DelayN.ar(env,1,attack+decay));
+	snd=snd + (WhiteNoise.ar(noise)*DelayN.ar(env,1,attack+decay));
 	// snd = RLPF.ar(snd,MouseX.kr(60,8000,1),1.0);
-	snd = MoogFF.ar(snd,Select.kr(
-		mod1<0.5,
-		[8000,LinExp.kr(mod1,0,0.5,20,8000)]
-	),2);
-	snd = HPF.ar(snd,Select.kr(
-		mod1>0.5,
-		[8000,LinExp.kr(mod1,0.5,1,80,20000)]
-	));
-	snd = snd * amp * env * K2A.ar(In.kr(lfo1));
-	snd = snd.tanh; 
+	snd=MoogFF.ar(snd,MouseX.kr(100,8000,1));
+	snd=HPF.ar(snd,60);
+	// snd = MoogFF.ar(snd,Select.kr(
+	// 	mod1<0.5,
+	// 	[8000,LinExp.kr(mod1,0,0.5,20,8000)]
+	// ),2);
+	// snd = HPF.ar(snd,Select.kr(
+	// 	mod1>0.5,
+	// 	[80,LinExp.kr(mod1,0.5,1,80,20000)]
+	// ));
+	snd = snd * amp * env;
+	snd = snd.tanh;
 	DetectSilence.ar(snd,doneAction:2);
 	Out.ar(0,Pan2.ar(snd));
 }).add;
@@ -54,7 +56,7 @@ Synth("lfo1",[\out,~lfo1]);
 )
 
 // ~10% cpu on Dell
-Pbind(\instrument, \juno, \freq, Pseq(([60,62,65,60,62,65,60,62,65,60,62,65,58,62,67,58,62,67,58,62,67,58,62,67]).midicps, inf), \dur, Pseq([0.2],inf)).play;
+Pbind(\instrument, \junoesque, \freq, Pseq(([60,62,65,60,62,65,60,62,65,60,62,65,58,62,67,58,62,67,58,62,67,58,62,67]).midicps, inf), \dur, Pseq([0.2],inf)).play;
 
 // now you can create multiple instances of them!
 (

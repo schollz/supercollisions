@@ -1,0 +1,4 @@
+github.com/blang/mpv v0.0.0-20160810175505-d56d7352e068 h1:P3ukpA1t7dgNIfe21LpB+zIBDQ1Dik9K1DMPdO/TcUA=
+github.com/blang/mpv v0.0.0-20160810175505-d56d7352e068/go.mod h1:E3TTEJpVApQMkhVk3Lr0sAmcbcclY3pGgPbRsy+rdlk=
+github.com/hypebeast/go-osc v0.0.0-20210408213458-3287e1838f40 h1:w+HdpjIfD+5Kb8aJ1KK9ROuqS9No/p0mSYTx/0XCASc=
+github.com/hypebeast/go-osc v0.0.0-20210408213458-3287e1838f40/go.mod h1:lqMjoCs0y0GoRRujSPZRBaGb4c5ER6TfkFKSClxkMbY=

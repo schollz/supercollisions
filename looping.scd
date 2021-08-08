@@ -29,7 +29,7 @@ SynthDef("player",{ arg rate=1,bufnum=0,fadeOut=0.0;
 
 
 (
-~loopSize=1; // seconds
+~loopSize=60/124*2; // seconds
 ~fadeOut=0.1; // seconds
 )
 
@@ -50,11 +50,21 @@ SynthDef("player",{ arg rate=1,bufnum=0,fadeOut=0.0;
 // .. and record one at a time
 r= {arg i; Synth("recorder",[\bufnum,~bufs[i]])};
 r.(0); // record into 1-second loop
-r.(1); // record into 2-second loop
 r.(2); // record into 3-second loop
+r.(1); // record into 2-second loop
 r.(3); // etc
 r.(4);
 r.(5);
 r.(6);
+
+(
+t = Task({
+		inf.do({ arg i;
+		rrand(1,2).postln
+		});
+
+}).play;
+
+)
 
 s.record;

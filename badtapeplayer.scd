@@ -10,7 +10,7 @@ s.waitForBoot({
 		var combined_defects = 1 + wow + flutter;
 		var sig = PlayBuf.ar(2, bufnum, BufRateScale.kr(bufnum)*combined_defects*EnvGen.kr(Env.asr(1,1,curve:1)), doneAction:Done.freeSelf);
 
-		sig=sig+LPF.ar(WhiteNoise.ar(Amplitude.kr(sig)*0.9),LinExp.kr(Amplitude.kr(sig),0,0.2,60,900));
+		sig=sig+LPF.ar(PinkNoise.ar(Amplitude.kr(sig)*0.1),LinExp.kr(Amplitude.kr(sig),0,0.2,60,900));
 
 		sig=Compander.ar(sig,sig,
 			thresh: 0.1,
@@ -22,7 +22,7 @@ s.waitForBoot({
 		Out.ar(out, sig);
 	}).add;
 
-	b = Buffer.read(s, "/home/zns/Documents/supercollider/sax_dmin_75bpm.wav"); // link in code description, or use your own...
+	b = Buffer.read(s, thisProcess.nowExecutingPath.dirname++"/beats16_bpm150_Ultimate_Jack_Loops_014__BPM_150_.wav"); // link in code description, or use your own...
 	s.sync;
 
 	Synth(\wowflutter_2chan ,[
