@@ -85,14 +85,16 @@
 		~bufferedInput=Buffer.alloc(s,~packetFrames*2,2);
 		~bufferedInputIterator=0;
 
-	    SynthDef.new(\continuous, {
-	        arg buf, out=0, amp=1;
-	        Out.ar(out, PlayBuf.ar(2, buf,loop:1.0) * amp);
+	    SynthDef.new("playbackCapture", {
+	        arg buf, busOut=0, out=0, amp=1;
+	        var snd=PlayBuf.ar(2, buf,loop:1.0) * amp;
+	        Out.ar(busOut, snd);
+	        Out.ar(out, snd);
 	    }).send(s);
 
 	    s.sync;
 
-		~receiver=Synth.new(\continuous, [\buf,~bufferedInput.bufnum,\out,0]);
+		~receiver=Synth.new("playbackCapture", [\buf,~bufferedInput.bufnum,\out,0,\busOut,~audioOut.index]);
 
 		~o2 = OSCFunc({ arg msg, time;
 		    [time, msg].postln;
@@ -111,7 +113,9 @@
 (
 SynthDef("sine",{
 	arg freq=220,amp=1.0,out=0;
-	Out.ar(out,SinOsc.ar([freq,freq+2])*amp)	
+	var snd=SinOsc.ar([freq,freq+2])*amp;
+	Out.ar(out,snd);
+	Out.ar(0,snd);	
 }).add;
 )
 
