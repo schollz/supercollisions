@@ -1,70 +1,111 @@
-
-// https://gist.githubusercontent.com/catfact/37a95b4bdbed8792f0a22cd472bacd91/raw/a9e5286204e4e68afc0eb1a23029ba672fc41240/chunked_audio_capture.scd
-// write audio input to multiple, equally sized, contiguous .wav chunks
-(
-~audioIn = Bus.audio(s,2);
-~audioOut = Bus.audio(s,2);
-~packetFrames = 45056;
-~uploaderPort = 8765;
-
-)
 (
 Routine {
 	~audioIn = Bus.audio(s,2);
-	~audioOut = Bus.audio(s,2);
-	~uploaderPort = 8765;
 
+	// rolling save+upload
+	~audioOut = Bus.audio(s,2); // output of audioOut bus is saved
+	~uploaderPort = 8765;
 	~packetFrames = 45056;
 	~packetsPerBuffer = 10.0;
 	~bufFrames = ~packetFrames * ~packetsPerBuffer;
-
 	~outBuffer = Buffer.alloc(s, ~bufFrames, 2);
-	~basePath = "C:/Users/zacks/Downloads/chunks/";
-	~chunkId = 0;
-
-
+	~basePath = "C:/Users/zacks/Downloads/chunks";
+	~chunkId = -1;
 	~oscTrig = OSCFunc({ arg msg, time;
 		var startFrame,path;
 		msg.postln;
-		startFrame=(~chunkId.mod(~packetsPerBuffer))*~packetFrames;
-		path = "%/%.wav".format(~basePath, ~chunkId);
-		postf("saving: % (start frame: %)\n", path, startFrame);
-		~outBuffer.write(path, "wav", ~packetFrames, startFrame);
+		if (~chunkId>1.neg,{
+			startFrame=(~chunkId.mod(~packetsPerBuffer))*~packetFrames;
+			path = "%/%.wav".format(~basePath, ~chunkId);
+			postf("saving: % (start frame: %)\n", path, startFrame);
+			~outBuffer.write(path, "wav", ~packetFrames, startFrame);
+			NetAddr("127.0.0.1",~uploaderPort).sendMsg("/up",path);
+		});
 		~chunkId = ~chunkId + 1;
 		// tell the uploaded to upload it
-		//NetAddr("127.0.0.1",~uploaderPort).sendMsg("/up",path);
 	},'/tr', s.addr);
-
-
-	// define synths
-	~synth1={
-		arg freq=220,amp=1.0,out=0;
-		var snd=SinOsc.ar([freq,freq+2])*amp;
-		Out.ar(~audioOut.index,snd);
-	}.play(s);
-
 	s.sync;
 	SynthDef.new("rollingBuffer",{
 		arg audioOut,buf;
 		var phase;
 		phase=Phasor.ar(1,1,end:~bufFrames);
-		BufWr.ar(In.ar(audioOut,2).poll, buf,phase);
-		SendTrig.kr(DelayN.kr(Impulse.kr(~packetFrames/s.sampleRate),1.5*~packetFrames/s.sampleRate,1.5*~packetFrames/s.sampleRate));
+		BufWr.ar(In.ar(audioOut,2), buf,phase);
+		SendTrig.kr(DelayN.kr(Impulse.kr(s.sampleRate/~packetFrames),0.1,0.1));
 		nil
 	}).add;
 	s.sync;
-	~rollingBuffer=Synth.after(~synth1,"rollingBuffer",[\audioOut,~audioOut.index,\buf,~outBuffer.bufnum]);
+	~rollingBuffer=Synth.new("rollingBuffer",[\audioOut,~audioOut.index,\buf,~outBuffer.bufnum],addAction:\addToTail);
+
+	// rolling import audio
+	~bufferedInput=Buffer.alloc(s,~packetFrames*~packetsPerBuffer,2);
+	~bufferedInputIterator=1.neg;
+	s.sync;
+	SynthDef.new("playbackCapture", {
+		arg buf, busOut=0, out=0, amp=1;
+		var pos=Phasor.ar(1,end:BufFrames.kr(buf));
+		var snd=BufRd.ar(2, buf,pos.poll) * amp;
+		Out.ar(out, snd);
+	}).send(s);
+	s.sync;
+	~oscReceiveData= OSCFunc({ arg msg, time;
+		[time, msg].postln;
+		// message is received to load new file
+		if (~bufferedInputIterator<0,{
+			~bufferedInput.read(msg[1],
+				bufStartFrame:0,
+				action:{
+					Routine{
+						~bufferedInputIterator=1;
+						2.5.wait;
+						"loaded first sample, playing".postln;
+						~receiver=Synth.new("playbackCapture", [\buf,~bufferedInput.bufnum,\out,0]);
+					}.play;
+			});
+		},{
+			var newPos=(~bufferedInputIterator.mod(~packetsPerBuffer))*~packetFrames;
+			~bufferedInput.read(msg[1],
+				bufStartFrame:newPos,
+			action:{
+					("read into "++newPos).postln;
+					~bufferedInputIterator.postln;
+		 	~bufferedInputIterator=~bufferedInputIterator+1;
+		 });
+
+		});
+	},'/down');
+
+
+
+	s.sync;
+SynthDef("simpleSine",{
+	arg freq=880,amp=0.5,out=0;
+	var snd=SinOsc.ar([freq,freq+2],mul:amp);
+	Out.ar(out,snd);
+}).add;
+	s.sync;
+x=Synth("simpleSine",[\out,~audioOut.index]);
 
 
 }.play;
 )
 
+// add synths
+(
+SynthDef("simpleSine",{
+	arg freq=880,amp=0.5,out=0;
+	var snd=SinOsc.ar([freq,freq+2],mul:amp);
+	Out.ar(out,snd);
+}).add;
+)
+x=Synth("simpleSine",[\out,~audioOut.index]);
+x.set(\freq,990)
 
-~outBuffer.plot;
 
+{SinOsc.ar(220)}.play;
 
+~bufferedInput.plot
 
-
+~bufferedInput.play;
 
 
 

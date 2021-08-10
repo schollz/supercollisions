@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/hypebeast/go-osc/osc"
@@ -21,13 +22,15 @@ func main() {
 
 	// run client in background
 	go func() {
+		var fname string
+		fname, _ = filepath.Abs(*flagDownload)
 		client := osc.NewClient(*flagHost, *flagPort)
 		for {
 			log.Debug("attempting download")
 			errDownload := downloadFile(*flagDownload, *flagDownload)
 			if errDownload == nil {
 				msg := osc.NewMessage("/down")
-				msg.Append(*flagDownload)
+				msg.Append(fname)
 				client.Send(msg)
 			}
 		}
@@ -37,6 +40,7 @@ func main() {
 	addr := "127.0.0.1:8765"
 	d := osc.NewStandardDispatcher()
 	// receive a message to upload the file
+
 	d.AddMsgHandler("/up", func(msg *osc.Message) {
 		foo := strings.Fields(msg.String())
 		log.Debug(msg.String())
