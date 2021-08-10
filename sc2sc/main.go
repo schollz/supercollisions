@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/hypebeast/go-osc/osc"
 	log "github.com/schollz/logger"
@@ -14,6 +13,8 @@ import (
 
 var flagHost = flag.String("host", "127.0.0.1", "host address to the osc server")
 var flagPort = flag.Int("port", 57120, "port of the osc server")
+var flagDownload = flag.String("down", "bob.wav", "audio to download")
+var flagUpload = flag.String("up", "jane.wav", "audio to upload")
 
 func main() {
 	flag.Parse()
@@ -22,18 +23,13 @@ func main() {
 	go func() {
 		client := osc.NewClient(*flagHost, *flagPort)
 		for {
-			log.Debug("sending msg")
-			time.Sleep(1 * time.Second)
-			msg := osc.NewMessage("/down")
-			msg.Append("down.wav")
-			client.Send(msg)
-			// log.Debug("attempting download")
-			// errDownload := downloadFile("down.wav", "test")
-			// if errDownload == nil {
-			// 	msg := osc.NewMessage("/osc/down")
-			// 	msg.Append(true)
-			// 	client.Send(msg)
-			// }
+			log.Debug("attempting download")
+			errDownload := downloadFile(*flagDownload, *flagDownload)
+			if errDownload == nil {
+				msg := osc.NewMessage("/down")
+				msg.Append(*flagDownload)
+				client.Send(msg)
+			}
 		}
 	}()
 
@@ -45,6 +41,12 @@ func main() {
 		foo := strings.Fields(msg.String())
 		log.Debug(msg.String())
 		log.Debugf("uploading %s", foo[len(foo)-1])
+		err := uploadFile(foo[len(foo)-1], *flagUpload)
+		if err != nil {
+			log.Error(err)
+		} else {
+			log.Debug("uploaded")
+		}
 	})
 
 	server := &osc.Server{

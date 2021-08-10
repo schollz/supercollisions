@@ -1,11 +1,16 @@
+
 // https://gist.githubusercontent.com/catfact/37a95b4bdbed8792f0a22cd472bacd91/raw/a9e5286204e4e68afc0eb1a23029ba672fc41240/chunked_audio_capture.scd
 // write audio input to multiple, equally sized, contiguous .wav chunks
 (
+	~audioIn = Bus.audio(s,2);
+	~audioOut = Bus.audio(s,2);
+	~packetFrames = 45056;
+	~uploaderPort = 8765;
+
 	Routine {
 
-		~packetFrames = 45056;
 		~bufFrames = ~packetFrames * 2;
-		b = Buffer.alloc(s, ~bufFrames, 2);
+		~outBuffer = Buffer.alloc(s, ~bufFrames, 2);
 
 		~basePath = "D:/chunks";
 		~chunkId = 0;
@@ -25,7 +30,10 @@
 				path = "%/%.wav".format(~basePath, ~chunkId);
 				~chunkId = ~chunkId + 1;
 				postf("saving: % (start frame: %)\n", path, startFrame);
-				b.write(path, "wav", ~bufFrames/2, startFrame);
+				~outBuffer.write(path, "wav", ~bufFrames/2, startFrame);
+
+				// tell the uploaded to upload it
+				NetAddr("127.0.0.1",~uploaderPort).sendMsg("/up",path);
 			});
 		},'/tr', s.addr);
 
@@ -38,15 +46,16 @@
 
 		s.sync;
 		~phase_s = {
-			Out.ar(~phase_b.index, Phasor.ar(0, BufRateScale.kr(b.bufnum), BufFrames.kr(b.bufnum)));
+			Out.ar(~phase_b.index, Phasor.ar(0, BufRateScale.kr(~outBuffer.bufnum), BufFrames.kr(~outBuffer.bufnum)));
 			nil
 		}.play(s);
 		s.sync;
 
 		~cap_s = {
-			BufWr.ar(SoundIn.ar([0, 1]), b, In.ar(~phase_b));
+			arg audioBus, phaseBus;
+			BufWr.ar(In.ar(inAudio), b, In.ar(phaseBus));
 			nil
-		}.play(~phase_s, addAction:\addAfter);
+		}.play([\audioBus,~audioOut,\phaseBus,~phase_s],, addAction:\addAfter);
 
 		// NB: the timing of the triggers isn't very critical;
 		// what is important is that they dont get skipped.
@@ -69,81 +78,52 @@
 			SendTrig.kr(A2K.kr(phase > thresh2), 2);
 		}.play(~phase_s, addAction:\addAfter);
 
+
+
+		// playback
+
+		~bufferedInput=Buffer.alloc(s,~packetFrames*2,2);
+		~bufferedInputIterator=0;
+
+	    SynthDef.new(\continuous, {
+	        arg buf, out=0, amp=1;
+	        Out.ar(out, PlayBuf.ar(2, buf,loop:1.0) * amp);
+	    }).send(s);
+
+	    s.sync;
+
+		~receiver=Synth.new(\continuous, [\buf,~bufferedInput.bufnum,\out,0]);
+
+		~o2 = OSCFunc({ arg msg, time;
+		    [time, msg].postln;
+		    // message is received to load new file
+			c.read(msg[1],bufStartFrame:~bufferedInputIterator*~packetFrames,action{
+				~bufferedInputIterator=1-~bufferedInputIterator;
+			});
+		},'/down');
+
 	}.play;
 )
 
 
-// test: load captures, concatenate and play back
-(
-n = 5;
-b = Buffer.alloc(s, ~packetFrames * n, 2);
-
-~paths = Array.fill(n, { arg i;
-	"%/%.wav".format(~basePath, i);
-});
-
-~paths.do({ arg p, i;
-	postf("reading: %\n", p);
-	b.read(p, bufStartFrame: ~packetFrames * i);
-});
-
-b.plot;
-{ PlayBuf.ar(2, b, doneAction:2) }.play(s);
-)
-
-
-
-// playback
-(
-
-s.waitForBoot {
-    ~packetSamples=45056;
-
-    SynthDef.new(\continuous, {
-        arg buf, out=0, amp=1;
-        Out.ar(out, PlayBuf.ar(2, buf,loop:1.0) * amp);
-    }).send(s);
-
-    c=Buffer.alloc(s,~packetSamples*2,2);
-    s.sync;
-
-    Routine {
-        s.sync;
-        c.read(thisProcess.nowExecutingPath.dirname++"/0.wav",action:{
-            x=Synth.new(\continuous, [\buf,c.bufnum]);
-        });
-        (~packetSamples/s.sampleRate/2).wait;
-        8.do { arg i;
-            c.read(thisProcess.nowExecutingPath.dirname++"/"++((i+1))++".wav",bufStartFrame:((i+1)%2)*~packetSamples);
-            (~packetSamples/s.sampleRate).wait;
-        };
-        0.5.wait;
-        x.free;
-    }.play;
-}
-)
-
-
+// define synths
 
 (
-SynthDef("upload",{
-    SendTrig.kr(Impulse.kr(1.0),0,1);
+SynthDef("sine",{
+	arg freq=220,amp=1.0,out=0;
+	Out.ar(out,SinOsc.ar([freq,freq+2])*amp)	
 }).add;
-
-// register to receive this message
-~o1 = OSCFunc({ arg msg, time;
-    [time, msg].postln;
-    // send message to upload
-    NetAddr("127.0.0.1",8765).sendMsg("/up","C:\\Users\\zacks\\Downloads\\up.wav");
-},'/tr', s.addr);
-~o2 = OSCFunc({ arg msg, time;
-    [time, msg].postln;
-    // message is received to load new file
-},'/down');
 )
 
+// this synth will be sent out!
+x=Synth("sine",[\out,~audioOut]);
 
-Synth("upload");
+
+
+
+
+
+
 
 
 
