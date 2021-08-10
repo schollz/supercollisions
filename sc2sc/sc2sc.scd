@@ -1,3 +1,5 @@
+// make sure to first run go server
+// go run main.go --down test.wav --up test.wav
 (
 Routine {
 	~audioIn = Bus.audio(s,2);
@@ -29,12 +31,14 @@ Routine {
 		arg audioOut,buf;
 		var phase;
 		phase=Phasor.ar(1,1,end:~bufFrames);
-		BufWr.ar(In.ar(audioOut,2), buf,phase);
+		BufWr.ar(In.ar(audioOut,2).poll, buf,phase);
 		SendTrig.kr(DelayN.kr(Impulse.kr(s.sampleRate/~packetFrames),0.1,0.1));
 		nil
 	}).add;
 	s.sync;
 	~rollingBuffer=Synth.new("rollingBuffer",[\audioOut,~audioOut.index,\buf,~outBuffer.bufnum],addAction:\addToTail);
+s.sync;
+
 
 	// rolling import audio
 	~bufferedInput=Buffer.alloc(s,~packetFrames*~packetsPerBuffer,2);
@@ -56,7 +60,7 @@ Routine {
 				action:{
 					Routine{
 						~bufferedInputIterator=1;
-						2.5.wait;
+						0.5.wait;
 						"loaded first sample, playing".postln;
 						~receiver=Synth.new("playbackCapture", [\buf,~bufferedInput.bufnum,\out,0]);
 					}.play;
@@ -73,18 +77,6 @@ Routine {
 
 		});
 	},'/down');
-
-
-
-	s.sync;
-SynthDef("simpleSine",{
-	arg freq=880,amp=0.5,out=0;
-	var snd=SinOsc.ar([freq,freq+2],mul:amp);
-	Out.ar(out,snd);
-}).add;
-	s.sync;
-x=Synth("simpleSine",[\out,~audioOut.index]);
-
 
 }.play;
 )

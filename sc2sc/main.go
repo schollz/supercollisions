@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/hypebeast/go-osc/osc"
 	log "github.com/schollz/logger"
@@ -61,7 +62,8 @@ func main() {
 }
 
 func uploadFile(fname, duct string) (err error) {
-	f, err := os.Open(fname)
+	time.Sleep(100 * time.Millisecond)
+	f, err := os.Open(filepath.ToSlash(fname))
 	if err != nil {
 		log.Error(err)
 		return
