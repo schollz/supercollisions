@@ -45,13 +45,15 @@ func main() {
 	d.AddMsgHandler("/up", func(msg *osc.Message) {
 		foo := strings.Fields(msg.String())
 		log.Debug(msg.String())
-		log.Debugf("uploading %s", foo[len(foo)-1])
-		err := uploadFile(foo[len(foo)-1], *flagUpload)
+		fname := foo[len(foo)-1]
+		log.Debugf("uploading %s", fname)
+		err := uploadFile(fname, *flagUpload)
 		if err != nil {
 			log.Error(err)
 		} else {
 			log.Debug("uploaded")
 		}
+		os.Remove(fname)
 	})
 
 	server := &osc.Server{
