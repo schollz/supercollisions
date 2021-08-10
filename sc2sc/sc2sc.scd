@@ -47,7 +47,7 @@ s.sync;
 	SynthDef.new("playbackCapture", {
 		arg buf, busOut=0, out=0, amp=1;
 		var pos=Phasor.ar(1,end:BufFrames.kr(buf));
-		var snd=BufRd.ar(2, buf,pos.poll) * amp;
+		var snd=BufRd.ar(2, buf,pos) * amp;
 		Out.ar(out, snd);
 	}).send(s);
 	s.sync;
@@ -82,6 +82,7 @@ s.sync;
 )
 
 // add synths
+// using ~audioOut if you want to send that audio away
 (
 SynthDef("simpleSine",{
 	arg freq=880,amp=0.5,out=0;
