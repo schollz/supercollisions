@@ -1,0 +1,4 @@
+github.com/hypebeast/go-osc v0.0.0-20210408213458-3287e1838f40 h1:w+HdpjIfD+5Kb8aJ1KK9ROuqS9No/p0mSYTx/0XCASc=
+github.com/hypebeast/go-osc v0.0.0-20210408213458-3287e1838f40/go.mod h1:lqMjoCs0y0GoRRujSPZRBaGb4c5ER6TfkFKSClxkMbY=
+github.com/schollz/logger v1.2.0 h1:5WXfINRs3lEUTCZ7YXhj0uN+qukjizvITLm3Ca2m0Ho=
+github.com/schollz/logger v1.2.0/go.mod h1:P6F4/dGMGcx8wh+kG1zrNEd4vnNpEBY/mwEMd/vn6AM=
