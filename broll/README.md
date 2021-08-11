@@ -1,10 +1,14 @@
 download youtube video
 
+```
+youtube-dl https://archive.org/details/59034VoyageToTheOceanOfStorms
+```
+
 convert youtube video to flac + mp4
 
 ```
-ffmpeg -y -i <downloaded>.webm -c copy -an everything.mp4
-ffmpeg -y -i <downloaded>.webm everything.flac
+ffmpeg -y -i <downloaded>.mp4 -c copy -an apollo.mp4
+ffmpeg -y -i <downloaded>.webm apollo.flac
 ```
 
 start vlc server 
