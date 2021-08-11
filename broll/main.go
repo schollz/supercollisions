@@ -2,75 +2,83 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/blang/mpv"
 	"github.com/hypebeast/go-osc/osc"
 )
 
-// type MoviePlayer struct {
-// 	Duration        float64
-// 	mpvc            *mpv.Client
-// 	secondsNoSignal int
-// 	pause           bool
-// }
+type MoviePlayer struct {
+	Duration        float64
+	c               *mpv.Client
+	secondsNoSignal int
+	paused          bool
+}
 
-// var moviePlayerIndex map[string]int
-// var moviePlayers []MoviePlayer
+var moviePlayerIndex map[string]int
+var moviePlayers []MoviePlayer
+var mu sync.Mutex
 
-// func New(fname string) (mp MoviePlayer, err error) {
-// 	if _, err = os.Stat(fname); os.IsNotExist(err) {
-// 		return
-// 	}
-// 	// run a new instance of mpv
+func New(fname string) (err error) {
+	fname = strings.Replace(fname, ".flac", ".mp4", 1)
+	if _, err = os.Stat(fname); os.IsNotExist(err) {
+		return
+	}
+	mu.Lock()
+	defer mu.Unlock()
 
-// 	return
-// }
+	ind := len(moviePlayers)
+	moviePlayerIndex[fname] = len(moviePlayers)
+	moviePlayers = append(moviePlayers, MoviePlayer{})
+	socket := fmt.Sprintf("/tmp/mpvsocket%d", ind)
 
-var duration float64
-var mpvc *mpv.Client
-var secondsNoSignal int
-var paused bool
-
-func mpvrun() (err error) {
-	ipcc := mpv.NewIPCClient("/tmp/mpvsocket") // Lowlevel client
-	mpvc = mpv.NewClient(ipcc)                 // Highlevel client, can also use RPCClient
-	mpvc.Loadfile("apollo.mp4", mpv.LoadFileModeReplace)
+	ipcc := mpv.NewIPCClient(socket) // Lowlevel client
+	moviePlayers[ind].c = mpv.NewClient(ipcc)
+	moviePlayers[ind].c.Loadfile("apollo.mp4", mpv.LoadFileModeReplace)
 	time.Sleep(1 * time.Second)
-	mpvc.SetPause(true)
-	paused = true
-	duration, err = mpvc.Duration()
+	moviePlayers[ind].c.SetPause(true)
+	moviePlayers[ind].paused = true
+	moviePlayers[ind].Duration, err = moviePlayers[ind].c.Duration()
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(duration)
+	fmt.Println(moviePlayers[ind].Duration)
 	go func() {
 		for {
 			time.Sleep(1 * time.Second)
-			secondsNoSignal++
-			if secondsNoSignal == 3 {
-				mpvc.SetPause(true)
-				paused = true
+			moviePlayers[ind].secondsNoSignal++
+			if moviePlayers[ind].secondsNoSignal == 3 {
+				moviePlayers[ind].c.SetPause(true)
+				moviePlayers[ind].paused = true
 			}
 		}
 	}()
+
 	return
 }
 
 func main() {
-	mpvrun()
 	addr := "127.0.0.1:12345"
 	d := osc.NewStandardDispatcher()
 	d.AddMsgHandler("/pos", func(msg *osc.Message) {
-		secondsNoSignal = 0
 		foo := strings.Fields(msg.String())
 		fmt.Println(foo)
-		if len(foo) == 3 {
-			pos, err := strconv.ParseFloat(foo[2], 64)
+		if len(foo) == 4 {
+			ind, err := strconv.Atoi(foo[2])
 			if err == nil {
-				seek(pos)
+				pos, err := strconv.ParseFloat(foo[3], 64)
+				if err == nil {
+					moviePlayers[ind].secondsNoSignal = 0
+					if moviePlayers[ind].paused {
+						moviePlayers[ind].c.SetPause(false)
+					}
+					fmt.Println("seeking", fmt.Sprintf("%2.4f", pos*moviePlayers[ind].Duration))
+					moviePlayers[ind].c.Exec("seek", fmt.Sprintf("%2.4f", pos*moviePlayers[ind].Duration), mpv.SeekModeAbsolute)
+				}
 			}
 		}
 	})
@@ -80,14 +88,4 @@ func main() {
 		Dispatcher: d,
 	}
 	server.ListenAndServe()
-}
-
-func seek(pos float64) (err error) {
-	if paused {
-		mpvc.SetPause(false)
-	}
-	fmt.Println("seeking", fmt.Sprintf("%2.4f", pos*duration))
-	mpvc.Exec("seek", fmt.Sprintf("%2.4f", pos*duration), mpv.SeekModeAbsolute)
-
-	return
 }
