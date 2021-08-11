@@ -1,3 +1,5 @@
+code inspired by [the b-roll](https://www.youtube.com/user/sideband77/videos) and [64videofingers](https://github.com/monome-community/collected/tree/master/64videofingers)
+
 first install `supercollider`, `mpv`, `ffmpeg`, `youtube-dl`, `Go` then
 
 download youtube video
