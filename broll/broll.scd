@@ -21,7 +21,7 @@
 (
 SynthDef("samplePlayer6", {
 	arg out=0, bufnum=0, rate=1, rateLag=0,start=0, end=1, reset=0, t_trig=1,videoID=0,
-	loops=1, amp=0.5, resetFreq=1, loopRate=1,loopRange=0.5,loopOffset=0.0;
+	loops=1, amp=0.5, resetFreq=1, loopRate=1,loopRange=0.5,loopOffset=0.0,hpf=20;
 	var snd,snd2,pos,pos2,frames,duration,env;
 	var startA,endA,startB,endB,resetA,resetB,crossfade,aOrB,lfo1,lfo,lfo_trig;
 
@@ -89,56 +89,81 @@ SynthDef("samplePlayer6", {
 
 
 	SendTrig.kr(t_trig,videoID,reset);
-	Out.ar(out,(crossfade*snd)+((1-crossfade)*snd2) * env * amp)
+	snd=(crossfade*snd)+((1-crossfade)*snd2) * env * amp;
+	snd=HPF.ar(snd,hpf);
+	Out.ar(out,snd)
 }).add;
 o = OSCFunc({ arg msg, time;
     [time, msg].postln;
 	NetAddr("localhost", 12345).sendMsg('/pos',~videos[msg[2]],msg[3]);
 },'/tr', s.addr);
-)
-
-// Dmaj F#m Amaj...something like that
 ~videos=Array.new();
 
+)
+
+
 // Dmaj Amaj  Bmin F#min
-~videos=~videos.add("apollo.flac");
+
+(
+Routine{
+	var buffer, syn;
+	~videos=~videos.add("o4_s5IuXeP4.flac");
+   buffer=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/"++~videos[~videos.size-1]);
+	syn=Synth("samplePlayer6", [\bufnum, buffer,\videoID,~videos.size-1]);
+	1000.do{
+		syn.set(\t_trig,1,\resetFreq,4,\loopRate,2.5,\loopRange,0.01,\loopOffset,0.02);
+		2.wait;
+		syn.set(\t_trig,1,\resetFreq,4,\loopRate,2.5,\loopRange,0.01,\loopOffset,0.044);
+		2.wait;
+	};
+}.play
+)
+
+
+
+
+
+(
+Routine{
+	var buffer, syn;
+	~videos=~videos.add("0YtYMzh8lxk.flac");
+   buffer=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/"++~videos[~videos.size-1]);
+	syn=Synth("samplePlayer6", [\bufnum, buffer,\videoID,~videos.size-1,\amp,0.1]);
+	1000.do{
+		syn.set(\t_trig,1,\resetFreq,0.5,\loopRate,0.75,\loopRange,0.1,\loopOffset,0.05);
+		8.wait;
+		syn.set(\t_trig,1,\resetFreq,0.5,\loopRate,0.75,\loopRange,0.1,\loopOffset,0.06);
+		8.wait;
+	};
+}.play
+)
+
+
+
+
+
+
+(
+Routine{
+	var buffer, syn;
+	~videos=~videos.add("31M_MdSVxV8.flac");
+   buffer=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/"++~videos[~videos.size-1]);
+	syn=Synth("samplePlayer6", [\bufnum, buffer,\videoID,~videos.size-1,\amp,0.1]);
+	1000.do{
+		syn.set(\t_trig,1,\resetFreq,1,\loopRate,1,\loopRange,0.1,\loopOffset,0.676,\rate,1.0*1.092,\amp,0.1,\hpf,400);
+		10.wait;
+	};
+}.play
+)
+
+
+// play around with videos here
+~videos=~videos.add("31M_MdSVxV8.flac");
 ~buffer=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/"++~videos[~videos.size-1]);
 x=Synth("samplePlayer6", [\bufnum, ~buffer,\videoID,~videos.size-1]);
-x.set(\t_trig,1,\resetFreq,1,\loopRate,1,\loopRange,0.0000,\loopOffset,0.051)
-x.set(\t_trig,1,\resetFreq,4,\loopRate,2.5,\loopRange,0.01,\loopOffset,0.98,\amp,0.3)
-x.set(\t_trig,1,\resetFreq,4,\loopRate,2.5,\loopRange,0.0054,\loopOffset,0.972)
-x.set(\t_trig,4,\resetFreq,4,\loopRate,2.5,\loopRange,0.012,\loopOffset,0.97)
-x.set(\t_trig,1,\resetFreq,1,\loopRate,1.25,\loopRange,0.0,\loopOffset,0.025)
-
-
-
-~videos=~videos.add("o4_s5IuXeP4.flac");
-~buffer=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/"++~videos[~videos.size-1]);
-w=Synth("samplePlayer6", [\bufnum, ~buffer,\videoID,~videos.size-1]);
-w.set(\t_trig,1,\resetFreq,4,\loopRate,2.5,\loopRange,0.01,\loopOffset,0.02)
-w.set(\t_trig,1,\resetFreq,4,\loopRate,2.5,\loopRange,0.01,\loopOffset,0.044)
-w.set(\t_trig,1,\resetFreq,4,\loopRate,2.5,\loopRange,0.06,\loopOffset,0.04)
-w.set(\t_trig,1,\resetFreq,4,\loopRate,2.5,\loopRange,0.03,\loopOffset,0.081)
+x.set(\t_trig,1,\resetFreq,1,\loopRate,1,\loopRange,0.1,\loopOffset,0.676,\rate,1.0*1.092,\amp,0.2)
+x.free;
 
 
 
 
-
-~videos=~videos.add("stella.flac");
-~stella=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/"++~videos[~videos.size-1]);
-z=Synth("samplePlayer6", [\bufnum, ~stella,\videoID,~videos.size-1]);
-z.set(\t_trig,1,\resetFreq,1,\loopRate,1,\loopRange,0.0002,\loopOffset,0.03,\amp,0.3)
-z.set(\t_trig,1,\resetFreq,1,\loopRate,1.25,\loopRange,0.01,\loopOffset,0.180,\amp,1.0)
-
-
-
-~videos=~videos.add("spoons.flac");
-~spoons=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/"++~videos[~videos.size-1]);
-y=Synth("samplePlayer6", [\bufnum, ~spoons,\videoID,~videos.size-1]);
-y.set(\t_trig,1,\resetFreq,1,\loopRate,1.25,\loopRange,0.0002,\loopOffset,0.925,\amp,0.1)
-y.set(\t_trig,1,\resetFreq,1,\loopRate,1.25,\loopRange,0.0001,\loopOffset,0.915,\amp,0.3)
-y.set(\t_trig,1,\resetFreq,0.4,\loopRate,1.25,\loopRange,0.001,\loopOffset,0.875,\amp,1.0)
-y.set(\t_trig,1,\resetFreq,1,\loopRate,1.25,\loopRange,0.005,\loopOffset,0.445,\amp,0.1)
-y.set(\t_trig,1,\resetFreq,1,\loopRate,1.25,\loopRange,0.001,\loopOffset,0.84,\amp,0.3)
-y.set(\t_trig,1,\resetFreq,1,\loopRate,1.25,\loopRange,0.004,\loopOffset,0.87,\amp,0.3)
-y.set(\t_trig,1,\resetFreq,4,\loopRate,1.25,\loopRange,0.004,\loopOffset,0.97,\amp,0.2)
