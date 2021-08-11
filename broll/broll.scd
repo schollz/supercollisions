@@ -25,6 +25,8 @@ SynthDef("samplePlayer6", {
 	var snd,snd2,pos,pos2,frames,duration,env;
 	var startA,endA,startB,endB,resetA,resetB,crossfade,aOrB,lfo1,lfo,lfo_trig;
 
+	// loopRange=MouseY.kr(0,0.2).poll;
+	// loopOffset=MouseX.kr().poll;
 	// THESE LINES ARE AMAZING
 	// INSPIRED FROM the b-roll: https://www.youtube.com/watch?v=g6xdPRGHLLg
 	lfo1=Phasor.kr(t_trig,2*pi*s.options.blockSize/s.sampleRate*resetFreq,0,2*pi)-0.1;
@@ -86,8 +88,8 @@ SynthDef("samplePlayer6", {
 	);
 
 
-	SendTrig.kr(t_trig,0,pos/frames);
-	Out.ar(out,LPF.ar((crossfade*snd)+((1-crossfade)*snd2) * env * amp,MouseX.kr(20,20000,1)))
+	SendTrig.kr(t_trig,0,reset);
+	Out.ar(out,(crossfade*snd)+((1-crossfade)*snd2) * env * amp)
 }).add;
 o = OSCFunc({ arg msg, time;
     [time, msg].postln;
@@ -95,17 +97,18 @@ o = OSCFunc({ arg msg, time;
 },'/tr', s.addr);
 )
 
-~buffer=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/everything.flac");
+// Dmaj F#m Amaj...something like that
+~buffer=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/apollo.flac");
 x=Synth("samplePlayer6", [\bufnum, ~buffer]); // will start playing
 // try different combos...
-x.set(\t_trig,1,\resetFreq,4,\loopRate,2.5,\loopRange,0.01,\loopOffset,0.03)
-x.set(\t_trig,1,\resetFreq,172/60*2,\loopRate,172/60/4*2.5,\loopRange,0.01,\loopOffset,0.03)
-x.set(\t_trig,1,\resetFreq,172/60*2,\loopRate,172/60/2*2.5,\loopRange,0.03,\loopOffset,0.12)
-x.set(\t_trig,1,\resetFreq,172/60*2,\loopRate,172/60/2*2.5,\loopRange,0.035,\loopOffset,0.26)
-x.set(\t_trig,1,\resetFreq,172/60*2,\loopRate,172/60/4*2.5,\loopRange,0.035,\loopOffset,0.41)
-x.set(\t_trig,1,\resetFreq,2,\loopRate,0.8,\loopRange,0.02,\loopOffset,0.13)
-x.set(\t_trig,1,\resetFreq,4,\loopRate,2.5,\loopRange,0.05,\loopOffset,0.1)
-x.set(\t_trig,1,\resetFreq,1,\loopRate,0.25,\loopRange,0.05,\loopOffset,0.3)
-x.set(\t_trig,1,\resetFreq,2,\loopRate,0.25,\loopRange,0.07,\loopOffset,0.6)
-x.set(\t_trig,1,\resetFreq,1,\loopRate,2.5,\loopRange,0.1,\loopOffset,0.09)
+x.set(\t_trig,1,\resetFreq,4,\loopRate,2.5,\loopRange,0.01,\loopOffset,0.98)
+x.set(\t_trig,1,\resetFreq,4,\loopRate,2.5,\loopRange,0.0054,\loopOffset,0.972)
+x.set(\t_trig,1,\resetFreq,4,\loopRate,2.5,\loopRange,0.012,\loopOffset,0.973)
+
+
+x.set(\t_trig,1,\resetFreq,4,\loopRate,2.5,\loopRange,0.02,\loopOffset,0.1)
+x.set(\t_trig,1,\resetFreq,1,\loopRate,2.5,\loopRange,0.005,\loopOffset,0.67)
+x.set(\t_trig,1,\resetFreq,1,\loopRate,2.5,\loopRange,0.01,\loopOffset,0.76)
+x.set(\t_trig,1,\resetFreq,1,\loopRate,2.5,\loopRange,0.005,\loopOffset,0.7)
+
 
