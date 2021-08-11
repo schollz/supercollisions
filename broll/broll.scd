@@ -100,13 +100,25 @@ o = OSCFunc({ arg msg, time;
 // Dmaj F#m Amaj...something like that
 ~videos=Array.new();
 
+// Dmaj Amaj  Bmin F#min
 ~videos=~videos.add("apollo.flac");
 ~buffer=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/"++~videos[~videos.size-1]);
 x=Synth("samplePlayer6", [\bufnum, ~buffer,\videoID,~videos.size-1]);
-x.set(\t_trig,1,\resetFreq,1,\loopRate,1.25,\loopRange,0.0002,\loopOffset,0.025)
-x.set(\t_trig,1,\resetFreq,4,\loopRate,2.5,\loopRange,0.01,\loopOffset,0.98)
+x.set(\t_trig,1,\resetFreq,1,\loopRate,1,\loopRange,0.0000,\loopOffset,0.051)
+x.set(\t_trig,1,\resetFreq,4,\loopRate,2.5,\loopRange,0.01,\loopOffset,0.98,\amp,0.3)
 x.set(\t_trig,1,\resetFreq,4,\loopRate,2.5,\loopRange,0.0054,\loopOffset,0.972)
 x.set(\t_trig,4,\resetFreq,4,\loopRate,2.5,\loopRange,0.012,\loopOffset,0.97)
+x.set(\t_trig,1,\resetFreq,1,\loopRate,1.25,\loopRange,0.0,\loopOffset,0.025)
+
+
+
+~videos=~videos.add("o4_s5IuXeP4.flac");
+~buffer=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/"++~videos[~videos.size-1]);
+w=Synth("samplePlayer6", [\bufnum, ~buffer,\videoID,~videos.size-1]);
+w.set(\t_trig,1,\resetFreq,4,\loopRate,2.5,\loopRange,0.01,\loopOffset,0.02)
+w.set(\t_trig,1,\resetFreq,4,\loopRate,2.5,\loopRange,0.01,\loopOffset,0.044)
+w.set(\t_trig,1,\resetFreq,4,\loopRate,2.5,\loopRange,0.06,\loopOffset,0.04)
+w.set(\t_trig,1,\resetFreq,4,\loopRate,2.5,\loopRange,0.03,\loopOffset,0.081)
 
 
 
@@ -123,10 +135,10 @@ z.set(\t_trig,1,\resetFreq,1,\loopRate,1.25,\loopRange,0.01,\loopOffset,0.180,\a
 ~videos=~videos.add("spoons.flac");
 ~spoons=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/"++~videos[~videos.size-1]);
 y=Synth("samplePlayer6", [\bufnum, ~spoons,\videoID,~videos.size-1]);
-y.set(\t_trig,1,\resetFreq,1,\loopRate,1.25,\loopRange,0.0002,\loopOffset,0.925,\amp,0.3)
+y.set(\t_trig,1,\resetFreq,1,\loopRate,1.25,\loopRange,0.0002,\loopOffset,0.925,\amp,0.1)
 y.set(\t_trig,1,\resetFreq,1,\loopRate,1.25,\loopRange,0.0001,\loopOffset,0.915,\amp,0.3)
 y.set(\t_trig,1,\resetFreq,0.4,\loopRate,1.25,\loopRange,0.001,\loopOffset,0.875,\amp,1.0)
 y.set(\t_trig,1,\resetFreq,1,\loopRate,1.25,\loopRange,0.005,\loopOffset,0.445,\amp,0.1)
 y.set(\t_trig,1,\resetFreq,1,\loopRate,1.25,\loopRange,0.001,\loopOffset,0.84,\amp,0.3)
 y.set(\t_trig,1,\resetFreq,1,\loopRate,1.25,\loopRange,0.004,\loopOffset,0.87,\amp,0.3)
-y.set(\t_trig,1,\resetFreq,1,\loopRate,1.25,\loopRange,0.004,\loopOffset,0.97,\amp,0.2)
+y.set(\t_trig,1,\resetFreq,4,\loopRate,1.25,\loopRange,0.004,\loopOffset,0.97,\amp,0.2)
