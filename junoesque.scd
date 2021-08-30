@@ -9,7 +9,7 @@ SynthDef("lfo1",{
 (
 SynthDef("junoesque",{
 	// basic parameters
-	arg freq=220,attack=0.05,decay=0.1,sustain=0.5,release=1.0,amp=1.0,
+	arg freq=220,attack=0.005,decay=0.1,sustain=0.5,release=1.0,amp=1.0,
 	mod1=0.0,mod2=0.5,mod3=0.5,
 	lfo1,
 	// special parameters
@@ -30,19 +30,17 @@ SynthDef("junoesque",{
 		snd2
 	});
 	snd = Mix.ar(snd);
-	snd=snd + (WhiteNoise.ar(noise)*DelayN.ar(env,1,attack+decay));
-	// snd = RLPF.ar(snd,MouseX.kr(60,8000,1),1.0);
-	snd=MoogFF.ar(snd,MouseX.kr(100,8000,1));
+	snd=MoogLadder.ar(snd,freq*3);
+
+		snd= Mix.fill(6, {
+			var maxdelaytime= rrand(0.01,0.03);
+			var half= maxdelaytime*0.5;
+			var quarter= maxdelaytime*0.25;
+			DelayC.ar(snd, maxdelaytime, half+(quarter*LPF.ar(WhiteNoise.ar,SinOsc.kr(0.1,rrand(0,2*pi)).range(5,15))))/6
+		});
 	snd=HPF.ar(snd,60);
-	// snd = MoogFF.ar(snd,Select.kr(
-	// 	mod1<0.5,
-	// 	[8000,LinExp.kr(mod1,0,0.5,20,8000)]
-	// ),2);
-	// snd = HPF.ar(snd,Select.kr(
-	// 	mod1>0.5,
-	// 	[80,LinExp.kr(mod1,0.5,1,80,20000)]
-	// ));
-	snd = snd * amp * env;
+
+	snd = snd * amp.poll * env;
 	snd = snd.tanh;
 	DetectSilence.ar(snd,doneAction:2);
 	Out.ar(0,Pan2.ar(snd));
@@ -56,14 +54,15 @@ Synth("lfo1",[\out,~lfo1]);
 )
 
 // ~10% cpu on Dell
-Pbind(\instrument, \junoesque, \freq, Pseq(([60,62,65,60,62,65,60,62,65,60,62,65,58,62,67,58,62,67,58,62,67,58,62,67]).midicps, inf), \dur, Pseq([0.2],inf)).play;
+Pbind(\instrument, \junoesque, \amp,1,\freq, Pseq(([60,62,65,60,62,65,60,62,65,60,62,65,58,62,67,58,62,67,58,62,67,58,62,67]).midicps, inf), \dur, Pseq([0.2],inf)).play;
 
 // now you can create multiple instances of them!
 (
-x = Synth("juno",[\freq,60.midicps]);
-y = Synth("juno",[\freq,62.midicps]);
-z = Synth("juno",[\freq,65.midicps]);
+x = Synth("junoesque",[\freq,60.midicps]);
+y = Synth("junoesque",[\freq,62.midicps]);
+z = Synth("junoesque",[\freq,65.midicps]);
 )
+
 (
 x.set(\freq,58.midicps);
 y.set(\freq,62.midicps);
