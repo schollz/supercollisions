@@ -33,8 +33,10 @@
 		snd = DelayC.ar(snd, 0.1, SinOsc.kr(Rand(1,100)/100, [0, 1pi]).range(0, 1e-4));
 		snd=Pan2.ar(snd,VarLag.kr(LFNoise0.kr(1/10),10,warp:\sine));
 	};
+	finalsnd=Pan2.ar(Pulse.ar(hz/2,LinLin.kr(LFTri.kr(0.5),-1,1,0.2,0.8),0.8));
+	finalsnd=MoogLadder.ar(finalsnd,LinExp.kr(VarLag.kr(LFNoise0.kr(1/6),6,warp:\sine),-1,1,hz*2,hz*4))*4;
 
-	finalsnd = guitar.(1)+guitar.(0)+guitar.(0)+guitar.(0);
+	finalsnd =finalsnd+ guitar.(1)+guitar.(0)+guitar.(0)+guitar.(0);
 	finalsnd=finalsnd/10;
 
 	// reverb predelay time :
@@ -45,8 +47,9 @@
 	4.do({ y = AllpassN.ar(y, 0.050, [0.050.rand, 0.050.rand], 1) });
 	// add original sound to reverb and play it :
 	finalsnd=finalsnd+(VarLag.kr(LFNoise0.kr(1/10),10,warp:\sine).range(0.01,0.04)*y);
-
-	Out.ar(0,finalsnd*amp);
+	finalsnd=finalsnd*EnvGen.ar(Env.new([0,1],[4]));
+	finalsnd=Compander.ar(finalsnd,finalsnd);
+	Out.ar(0,finalsnd*amp*(-10.dbamp));
 }.scope(fadeTime: 0);
 )
 

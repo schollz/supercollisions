@@ -1,6 +1,6 @@
 (
 {
-	arg hz=220,amp=1.0;
+	arg hz=220,amp=0.5;
 	var snd,mod,modFreq,sndk;
 	modFreq=10;
 	snd=[Mix.ar({
@@ -16,7 +16,8 @@
 	}!16)];
 	snd=snd*100;
 
-	Out.ar(0,snd.tanh*amp);
+	snd=snd*EnvGen.ar(Env.new([0,1],[4]));
+	Out.ar(0,snd.tanh*amp*(-10.dbamp));
 }.play
 )
 

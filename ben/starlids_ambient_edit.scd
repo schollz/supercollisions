@@ -8,9 +8,9 @@
 
 	note=hz.cpsmidi;
 
-	snd=Pan2.ar(Pulse.ar((note-12).midicps,LinLin.kr(LFTri.kr(0.5),-1,1,0.2,0.8)));
+	snd=Pan2.ar(Pulse.ar((note-12).midicps,LinLin.kr(LFTri.kr(0.5),-1,1,0.2,0.8),0.8));
 	// ADD LPF to bass
-	snd=MoogLadder.ar(snd,hz*2);
+	snd=MoogLadder.ar(snd,LinExp.kr(VarLag.kr(LFNoise0.kr(1/6),6,warp:\sine),-1,1,hz*2,hz*4));
 
 
 	snd=snd + Mix.ar({
@@ -42,7 +42,7 @@
 		Pan2.ar(snd,VarLag.kr(LFNoise0.kr(1/3),3,warp:\sine))
 	}!10);
 
-	//snd=MoogLadder.ar(snd.tanh,LinExp.kr(VarLag.kr(LFNoise0.kr(1/6),6,warp:\sine),-1,1,hz*10,hz*120));
+	snd=MoogLadder.ar(snd.tanh,LinExp.kr(VarLag.kr(LFNoise0.kr(1/6),6,warp:\sine),-1,1,hz*10,hz*120));
 
 	// reverb predelay time :
 	z = DelayN.ar(snd, 0.1);
@@ -58,10 +58,9 @@
 
 	snd=HPF.ar(snd*amp,20);
 
-	snd=snd*(2).dbamp;
-
 	snd=snd*EnvGen.ar(Env.new([0,1],[4]));
 
+	Out.ar(0,snd.tanh*(-10.dbamp));
 }.play
 )
 

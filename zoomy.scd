@@ -22,15 +22,16 @@
 
 		snd1=SinOscFB.ar(hz+(SinOsc.kr(0.1*i).range(hz.cpsmidi-(detuning*i),hz.cpsmidi+(detuning*i))),SinOsc.kr(0.2,Rand(0,2*pi)).range(0,0.5));
 		snd2=WhiteNoise.ar(0.1);
-	snd=SelectX.ar(env3,[snd1,snd2]);
-	snd=BLowPass.ar(snd,hz*6,0.6);
-	snd=DelayC.ar(snd, rrand(0.01,0.03), LFNoise1.kr(Rand(5,10),0.01,0.02)/15 );
-	snd=snd*env;
-	snd=Pan2.ar(snd,env2)
-}!12);
+		snd=SelectX.ar(env3,[snd1,snd2]);
+		snd=BLowPass.ar(snd,hz*6,0.6);
+		snd=DelayC.ar(snd, rrand(0.01,0.03), LFNoise1.kr(Rand(5,10),0.01,0.02)/15 );
+		snd=snd*env;
+		snd=Pan2.ar(snd,env2)
+	}!12);
 
-finalsnd=finalsnd*amp;
-Out.ar(0,finalsnd);
+	finalsnd=finalsnd*EnvGen.ar(Env.new([0,1],[4]));
+	finalsnd=finalsnd*amp;
+	Out.ar(0,finalsnd*(-20.dbamp));
 }.play
 )
 
