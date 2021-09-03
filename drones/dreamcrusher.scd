@@ -2,7 +2,7 @@
     arg hz=110,amp=0.5, seconds=60;
     var local, in, ampcheck,movement, sig, snd, y, z;
 
-	in = Splay.ar(Pulse.ar(Lag.ar(hz*
+	in = Splay.ar(Pulse.ar(Lag.kr(hz*
 		LinLin.kr(SinOsc.kr(LFNoise0.kr(1)/2),-1,1,0.99,1.01),1),
 		LinLin.kr(SinOsc.kr(LFNoise0.kr(1)),-1,1,0.45,0.55)
 	)!1)/1;
