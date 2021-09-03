@@ -16,9 +16,9 @@ for _, fname in enumerate(files):
         with open(os.path.join(dirname,fname),"w") as f2:
             f2.write("s.waitForBoot {\n")
             f2.write("""
-s.record(duration:10,path:"/data/"""+fname+""".aiff");
+s.record(duration:60,path:"/data/"""+fname+""".aiff");
 """)
             f2.write(data)
-            f2.write("Routine{11.wait; s.quit;}.play;}")
+            f2.write("Routine{61.wait; s.quit;}.play;}")
         os.system("""docker run -v `pwd`/"""+dirname+""":/data -d sc""")
-        time.sleep(60)
+        time.sleep(62)
