@@ -1,5 +1,3 @@
-// results will vary with blocksize. this is tuned for 64.
-
 (
 {
 	arg hz=110,amp=1.0;
@@ -50,22 +48,5 @@
 	finalsnd=finalsnd*EnvGen.ar(Env.new([0,1],[4]));
 	finalsnd=Compander.ar(finalsnd,finalsnd);
 	Out.ar(0,finalsnd*amp*(-10.dbamp));
-}.scope(fadeTime: 0);
-)
-
-(
-{SinOsc.ar(Line.ar(1000, 50, 0.01)) * Env.perc(0.001, 0.01).ar}.plot(0.01)
-)
-
-(
-{
-	var pick=Trig.kr(Impulse.kr(10),0.05);
-	SinOsc.ar(EnvGen.ar(Env.new([0,1000,50],[0.002,0.01]),gate:pick))*EnvGen.ar(Env.perc(0.0001, 0.01),gate:pick)
-}.plot(0.4)
-)
-
-(
-{
-EnvGen.kr(Env.new([1000,50],[0.01]))
-}.plot(0.01)
+}.play;
 )

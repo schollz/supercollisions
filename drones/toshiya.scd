@@ -32,11 +32,3 @@
 	Out.ar(0,snd*(-10.dbamp));
 }.play
 )
-
-{ Klank.ar(`[[200, 671, 1153, 1723], nil, [1, 1, 1, 1]], PinkNoise.ar([0.007, 0.007])) }.play;
-
-(
-{
-	VarLag.kr(LFNoise0.kr(1/0.1),0.1,warp:\sine)
-}.plot(2)
-)

@@ -20,21 +20,3 @@
 	Out.ar(0,snd.tanh*amp*(-10.dbamp));
 }.play
 )
-
-{ DynKlank.ar(`[[800, 1071, 1153, 1723], nil, [1, 1, 1, 1]], Impulse.ar(2, 0, 0.1)) }.play;
-
-
-{ DynKlank.ar(`[[200, 671, 1153, 1723], nil, [1, 1, 1, 1]], PinkNoise.ar([0.007, 0.007])) }.play;
-
-(
-{
-	LinExp.kr(VarLag.kr(LFNoise0.kr(10),1/10,warp:\sine),-1,1,0.001,0.5)
-}.plot(1)
-)
-
-(
-{
-	var modFreq=10;
-	Clip.ar(LinExp.ar(LatoocarfianC.ar(modFreq*10,1,LFNoise2.kr(modFreq*10/20,1.5,1.5),LFNoise2.kr(modFreq*10/20,0.5,0.5),LFNoise2.kr(modFreq*10/20,0.5,0.5)).range(0,1),0,1,0.01,1),0.01,0.5);
-}.plot(1)
-)

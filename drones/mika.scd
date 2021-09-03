@@ -1,9 +1,3 @@
-// orignal
-// https://ia600202.us.archive.org/29/items/sc140/sc140_sourcecode.txt
-// 16
-// Batuhan Bozkurt
-// play{AllpassC.ar(SinOsc.ar(55).tanh,0.4,TExpRand.ar(2e-4, 0.4,Impulse.ar(8)).round([2e-3,4e-3]),2)};// #supercollider with bass please...
-
 (
 {
 	var snd,freq,pulse, chords, chord;
@@ -22,12 +16,8 @@
 	Out.ar(0,snd.tanh*(-5.dbamp))
 }.play;
 )
-
-
-(
-{
-	var s;
-s=TExpRand.ar(2e-4, 0.4,Impulse.kr(8));
-	Silent.ar();
-}.play(0.25)
-)
+// orignal
+// https://ia600202.us.archive.org/29/items/sc140/sc140_sourcecode.txt
+// 16
+// Batuhan Bozkurt
+// play{AllpassC.ar(SinOsc.ar(55).tanh,0.4,TExpRand.ar(2e-4, 0.4,Impulse.ar(8)).round([2e-3,4e-3]),2)};// #supercollider with bass please...
