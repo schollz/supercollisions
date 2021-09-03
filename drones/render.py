@@ -43,6 +43,6 @@ for _, fname in enumerate(files):
 s.record(duration:"""+str(song_time)+""",path:"/data/"""+fname+""".aiff");
 """)
             f2.write(data)
-            f2.write("Routine{"++str(song_time+1)+".wait; s.quit;}.play;}")
+            f2.write("Routine{"+str(song_time+1)+".wait; s.quit;}.play;}")
         os.system("""docker run -v `pwd`/"""+dirname+""":/data -d sc""")
         time.sleep(song_time+2)
