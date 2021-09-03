@@ -17,9 +17,9 @@ for _, fname in enumerate(files):
 		if not os.path.exists(dirname):
 			os.makedirs(dirname)
 		with open(os.path.join(dirname,fname),"w") as f2:
-			f2.write("s.waitForBoot { s.record(duration:1800);")
+			f2.write("s.waitForBoot {\ns.record(duration:1800);\n")
 			f2.write(data)
-			f2.write("}")
+			f2.write("\n}")
 		os.system("""docker run -v `pwd`/"""+dirname+""":/data -v `pwd`/recordings:/root/.local/share/SuperCollider/Recordings -d sc""")
 		break
 	break
