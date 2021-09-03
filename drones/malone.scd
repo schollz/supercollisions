@@ -1,5 +1,5 @@
 {
-	arg hz=110,amp=1.0, seconds=60;
+	arg hz=110,amp=1.0,seconds=60;
 	var snd,env,z,y,sndgate,chord,chordchange;
 	var detuning=0.04;
 

@@ -33,7 +33,7 @@ for _, fname in enumerate(files):
             print("NO SECONDS!")
             print(fname)
             raise
-        data=re.sub("seconds=.*;","seconds={};".format(song_time),data,flags=re.DOTALL)
+        data=data.replace("seconds=60","seconds={}".format(song_time))
         dirname=fname+".render"
         if not os.path.exists(dirname):
             os.makedirs(dirname)
