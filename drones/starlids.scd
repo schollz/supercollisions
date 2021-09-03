@@ -23,6 +23,6 @@
 	// add original sound to reverb and play it :
 	snd=snd+(0.05*y);
 
-
 	snd=HPF.ar(snd,20);
+	Out.ar(0,snd);
 }.play;
