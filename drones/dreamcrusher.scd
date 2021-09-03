@@ -49,6 +49,6 @@
 	// add original sound to reverb and play it :
 	snd=snd+(0.025*y);
 
-	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds-8,8]));
+	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds-8,16]));
 	Out.ar(0,snd);
 }.play;

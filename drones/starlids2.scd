@@ -37,6 +37,7 @@
 	snd=MoogLadder.ar(snd.tanh,LinExp.kr(VarLag.kr(LFNoise0.kr(1/6),6,warp:\sine),-1,1,hz*10,hz*120));
 
 	// reverb predelay time :
+	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds-8,4]));
 	z = DelayN.ar(snd, 0.1);
 
 	// 7 length modulated comb delays in parallel :
@@ -50,6 +51,6 @@
 
 	snd=HPF.ar(snd*amp,20);
 
-	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds-8,4]));
+	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds-8,16]));
 	Out.ar(0,snd);
 }.play;

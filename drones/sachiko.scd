@@ -47,6 +47,7 @@
 	snd=MoogFF.ar(snd.tanh,LinExp.kr(VarLag.kr(LFNoise0.kr(1/4),4,warp:\sine),-1,1,hz*10,18000));
 
 	// reverb predelay time :
+   	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds-8,4]));
 	z = DelayN.ar(snd, 0.048);
 	// 7 length modulated comb delays in parallel :
 	y = Mix.ar(Array.fill(7,{ CombL.ar(z, 0.1, LFNoise1.kr(0.1.rand, 0.04, 0.05), 15) }));
@@ -55,6 +56,6 @@
 	// add original sound to reverb and play it :
 	snd=snd+(0.01*y);
    	snd=snd*amp/2;
-   	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds-8,4]));
+   	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds-8,16]));
    	Out.ar(0,snd);
 }.play;
