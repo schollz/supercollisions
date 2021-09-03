@@ -1,4 +1,3 @@
-(
 {
 	arg hz=110, amp=0.5;
 	var snd;
@@ -57,4 +56,3 @@
 	snd=snd+(0.01*y);
    	snd=snd*amp/2;
 }.play;
-)

@@ -1,4 +1,3 @@
-(
 {
 	arg hz=220,amp=0.5;
 	var snd,fx,y,z,note;
@@ -53,5 +52,4 @@
 
 	//snd=snd*EnvGen.ar(Env.new([0,1],[4]));
 
-}.play
-)
+}.play;

@@ -1,4 +1,3 @@
-(
 {
 	arg hz=220,amp=1.0;
 	var detuning=0.5;
@@ -32,7 +31,4 @@
 	finalsnd=finalsnd*EnvGen.ar(Env.new([0,1],[4]));
 	finalsnd=finalsnd*amp;
 	Out.ar(0,finalsnd*(-20.dbamp));
-}.play
-)
-
-
+}.play;

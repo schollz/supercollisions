@@ -1,4 +1,3 @@
-(
 {
     arg hz=220,amp=0.5;
 	var snd,fx,y,z;
@@ -26,5 +25,4 @@
 
 
 	snd=HPF.ar(snd,20);
-}.play
-)
+}.play;

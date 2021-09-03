@@ -1,4 +1,3 @@
-(
 {
 	arg hz=440,amp=1.0;
 	var snd,fx,y,z;
@@ -30,5 +29,4 @@
 	snd=HPF.ar(snd.tanh,20);
 	snd=snd*EnvGen.ar(Env.new([0,1],[4]));
 	Out.ar(0,snd*(-10.dbamp));
-}.play
-)
+}.play;

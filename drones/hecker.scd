@@ -1,4 +1,3 @@
-(
 {
 	arg hz=220,amp=0.5;
 	var snd,mod,modFreq,sndk;
@@ -18,5 +17,4 @@
 
 	snd=snd*EnvGen.ar(Env.new([0,1],[4]));
 	Out.ar(0,snd.tanh*amp*(-10.dbamp));
-}.play
-)
+}.play;

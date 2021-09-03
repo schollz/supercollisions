@@ -1,4 +1,3 @@
-(
 {
 	var snd,freq,pulse, chords, chord;
 	//            Am        F          C          Em
@@ -15,7 +14,6 @@
 	snd=HPF.ar(snd,70);
 	Out.ar(0,snd.tanh*(-5.dbamp))
 }.play;
-)
 // orignal
 // https://ia600202.us.archive.org/29/items/sc140/sc140_sourcecode.txt
 // 16

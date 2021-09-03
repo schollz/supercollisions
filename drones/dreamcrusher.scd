@@ -37,4 +37,4 @@
 	sig = Balance2.ar(local[0] * 0.2,local[1]*0.2,SinOsc.kr(
 		LinLin.kr(LFNoise0.kr(0.1),-1,1,0.05,0.2)
 	)*0.1)*amp;
-}
+}.play;

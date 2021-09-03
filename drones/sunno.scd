@@ -1,4 +1,3 @@
-(
 {
 	arg hz=110,amp=1.0;
 	var guitar,finalsnd,z,y;
@@ -49,4 +48,3 @@
 	finalsnd=Compander.ar(finalsnd,finalsnd);
 	Out.ar(0,finalsnd*amp*(-10.dbamp));
 }.play;
-)
