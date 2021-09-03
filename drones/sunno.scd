@@ -1,5 +1,5 @@
 {
-	arg hz=110,amp=1.0;
+	arg hz=110,amp=1.0,seconds=60;
 	var guitar,finalsnd,z,y;
 	hz=hz*VarLag.kr(LFNoise0.kr(1/10),10,warp:\sine).range(0.95,1);
 	guitar={
@@ -46,5 +46,6 @@
 	finalsnd=finalsnd+(VarLag.kr(LFNoise0.kr(1/10),10,warp:\sine).range(0.01,0.04)*y);
 	finalsnd=finalsnd*EnvGen.ar(Env.new([0,1],[4]));
 	finalsnd=Compander.ar(finalsnd,finalsnd);
+	finalsnd=finalsnd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds-8,4]));
 	Out.ar(0,finalsnd*amp*(-10.dbamp));
 }.play;

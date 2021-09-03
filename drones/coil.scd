@@ -1,5 +1,5 @@
 {
-	arg hz=220,amp=1.0;
+	arg hz=220,amp=1.0, seconds=60;
 	var y,z;
 	var detuning=0.5;
 	var finalsnd;
@@ -41,6 +41,6 @@
 	// add original sound to reverb and play it :
 	finalsnd=finalsnd+(0.05*y);
 
-
+	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds-8,4]));
 	Out.ar(0,finalsnd*(-20.dbamp));
 }.play;

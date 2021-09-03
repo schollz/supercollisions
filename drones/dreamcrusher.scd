@@ -1,5 +1,5 @@
 {
-    arg hz=110,amp=0.5;
+    arg hz=110,amp=0.5, seconds=60;
     var local, in, ampcheck,movement, sig, snd, y, z;
 
 	in = Splay.ar(Pulse.ar(Lag.ar(hz*
@@ -51,5 +51,6 @@
 	// add original sound to reverb and play it :
 	snd=snd+(0.025*y);
 
+	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds-8,4]));
 	Out.ar(0,snd);
 }.play;

@@ -18,16 +18,22 @@
 import os
 import glob
 import time
+import re
 
-song_time=20 #minutes
+song_time=0.5 #minutes
 
-song_time=song_time*60 #seconds
+song_time=song_time*60+8 #seconds
 files=list(glob.glob("*.scd"))
 for _, fname in enumerate(files):
     if "template" in fname:
         continue
     with open(fname,"r") as f:
         data=f.read()
+        if "seconds" not in data:
+            print("NO SECONDS!")
+            print(fname)
+            raise
+        data=re.sub("seconds=.*;","seconds={};".format(song_time),data,flags=re.DOTALL)
         dirname=fname+".render"
         if not os.path.exists(dirname):
             os.makedirs(dirname)

@@ -1,5 +1,5 @@
 {
-	arg hz=110, amp=0.5;
+	arg hz=110, amp=0.5,seconds=60;
 	var snd;
 	var local;
 	var z,y;
@@ -55,6 +55,6 @@
 	// add original sound to reverb and play it :
 	snd=snd+(0.01*y);
    	snd=snd*amp/2;
-
+   	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds-8,4]));
    	Out.ar(0,snd);
 }.play;

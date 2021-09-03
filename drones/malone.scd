@@ -1,5 +1,5 @@
 {
-	arg hz=110,amp=1.0;
+	arg hz=110,amp=1.0, seconds=60;
 	var snd,env,z,y,sndgate,chord,chordchange;
 	var detuning=0.04;
 
@@ -51,5 +51,7 @@
 	snd=snd+(VarLag.kr(LFNoise0.kr(1/10),10,warp:\sine).range(0.01,0.03)*y);
 
 	snd=HPF.ar(snd,20);
-	snd=snd/2*amp
+	snd=snd/2*amp;
+	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds-8,4]));
+	Out.ar(0,snd);
 }.play;

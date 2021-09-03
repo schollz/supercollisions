@@ -1,5 +1,5 @@
 {
-    arg hz=220,amp=0.5;
+    arg hz=220,amp=0.5,seconds=60;
 	var snd,fx,y,z;
 	var note=hz.cpsmidi;
 	snd=Pan2.ar(Pulse.ar((note-12).midicps,LinLin.kr(LFTri.kr(0.5),-1,1,0.2,0.8))/12*amp);
@@ -24,5 +24,6 @@
 	snd=snd+(0.05*y);
 
 	snd=HPF.ar(snd,20);
+	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds-8,4]));
 	Out.ar(0,snd);
 }.play;
