@@ -20,7 +20,7 @@ import glob
 import time
 import re
 
-song_time=0.5 #minutes
+song_time=2 #minutes
 
 song_time=song_time*60+8 #seconds
 files=list(glob.glob("*.scd"))
@@ -43,6 +43,6 @@ for _, fname in enumerate(files):
 s.record(duration:"""+str(song_time)+""",path:"/data/"""+fname+""".aiff");
 """)
             f2.write(data)
-            f2.write("Routine{"+str(song_time+1)+".wait; s.quit;}.play;}")
+            f2.write("Routine{"+str(song_time+20)+".wait; s.quit;}.play;}")
         os.system("""docker run -v `pwd`/"""+dirname+""":/data -d sc""")
-        time.sleep(song_time+2)
+        time.sleep(song_time+25)

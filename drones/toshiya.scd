@@ -14,6 +14,7 @@
 
 
 	// reverb predelay time :
+	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds-8,4]));
 	z = DelayN.ar(snd, 0.048);
 	// 7 length modulated comb delays in parallel :
 	y = Mix.ar(Array.fill(7,{ CombL.ar(z, 0.1, LFNoise1.kr(0.1.rand, 0.04, 0.05), 15) }));
@@ -27,6 +28,6 @@
 
 	snd=LPF.ar(snd,10000);
 	snd=HPF.ar(snd.tanh,20);
-	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds-8,4]));
+	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds-8,16]));
 	Out.ar(0,snd*(-10.dbamp));
 }.play;
