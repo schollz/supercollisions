@@ -1,6 +1,6 @@
 {
-    arg hz,amp;
-    var local, in, ampcheck,movement, sig;
+    arg hz=110,amp=0.5;
+    var local, in, ampcheck,movement, sig, snd, y, z;
 
 	in = Splay.ar(Pulse.ar(Lag.ar(hz*
 		LinLin.kr(SinOsc.kr(LFNoise0.kr(1)/2),-1,1,0.99,1.01),1),
@@ -37,6 +37,19 @@
 	sig = Balance2.ar(local[0] * 0.2,local[1]*0.2,SinOsc.kr(
 		LinLin.kr(LFNoise0.kr(0.1),-1,1,0.05,0.2)
 	)*0.1)*amp;
+
+	// reverb predelay time 
+	snd=sig;
+	z = DelayN.ar(snd, 0.04);
+
+	// 7 length modulated comb delays in parallel :
+	y = Mix.ar(Array.fill(7,{ CombL.ar(z, 0.1, LFNoise1.kr(0.1.rand, 0.04, 0.05), 15) }));
+
+	// two parallel chains of 4 allpass delays (8 total) :
+	4.do({ y = AllpassN.ar(y, 0.050, [0.050.rand, 0.050.rand], 1) });
+
+	// add original sound to reverb and play it :
+	snd=snd+(0.025*y);
 
 	Out.ar(0,snd);
 }.play;
