@@ -4,9 +4,6 @@ import os
 import glob
 import time
 
-if not os.path.exists("recordings"):
-    os.makedirs("recordings")
-
 files=list(glob.glob("*.scd"))
 for _, fname in enumerate(files):
     if "template" in fname:
