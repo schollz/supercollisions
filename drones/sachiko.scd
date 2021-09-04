@@ -4,7 +4,8 @@
 	var local;
 	var z,y;
 	var freq=hz;
-	snd=Array.fill(4,{arg i;
+	var bass,basshz;
+	snd=Array.fill(8,{arg i;
 		var snd2;
 		var freq2=freq;//*(2**i);
 		var modBank={LFTri.kr(LFNoise0.kr(rrand(1/60,1/3)).range(1/60,1/3))}!8;
@@ -40,14 +41,26 @@
 		);
 		snd2=LeakDC.ar(snd2); // remove DC bias JIC
 	});
-	snd=Mix.ar(snd);
+	snd=Mix.ar(snd/1.5);
 	snd=Splay.ar(snd);
 
 	// global moog filter
 	snd=MoogFF.ar(snd.tanh,LinExp.kr(VarLag.kr(LFNoise0.kr(1/4),4,warp:\sine),-1,1,hz*10,18000));
 
+	// bass
+	basshz=hz;
+	basshz=Select.kr(basshz>90,[basshz,basshz/2]);
+	basshz=Select.kr(basshz>90,[basshz,basshz/2]);
+	basshz=Select.kr(basshz>90,[basshz,basshz/2]);
+	bass=Pulse.ar(basshz,width:SinOsc.kr(1/3).range(0.2,0.4));
+	bass=bass+LPF.ar(WhiteNoise.ar(SinOsc.kr(1/rrand(3,4)).range(1,rrand(3,4))),SinOsc.kr(0.123).range(1.5,2.5)*basshz);
+	bass = Pan2.ar(bass,LFTri.kr(1/6.12).range(-0.2,0.2));
+	bass = HPF.ar(bass,20);
+	bass = LPF.ar(bass,SinOsc.kr(0.1).range(2,3)*basshz);
+	snd=snd+(SinOsc.kr(0.123).range(0.5,1.1)*bass);
+
 	// reverb predelay time :
-   	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds-8,4]));
+	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds,4]));
 	z = DelayN.ar(snd, 0.048);
 	// 7 length modulated comb delays in parallel :
 	y = Mix.ar(Array.fill(7,{ CombL.ar(z, 0.1, LFNoise1.kr(0.1.rand, 0.04, 0.05), 15) }));
@@ -55,7 +68,7 @@
 	4.do({ y = AllpassN.ar(y, 0.050, [0.050.rand, 0.050.rand], 1) });
 	// add original sound to reverb and play it :
 	snd=snd+(0.01*y);
-   	snd=snd*amp/2;
-   	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds-8,16]));
-   	Out.ar(0,snd);
+	snd=snd*amp/2;
+	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds,16]));
+	Out.ar(0,snd);
 }.play;

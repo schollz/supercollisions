@@ -1,6 +1,6 @@
 {
-	arg hz=110,amp=1.0,seconds=60;
-	var snd,env,z,y,sndgate,chord,chordchange;
+	arg hz=190,amp=1.0,seconds=60;
+	var snd,env,z,y,sndgate,chord,chordchange,bass,basshz;
 	var detuning=0.04;
 
 	chordchange=Impulse.kr(0.06)+Impulse.kr(0)+Dust.kr(0.005);
@@ -36,13 +36,23 @@
 	}));
 
 	env=EnvGen.ar(Env.new([0,1],[4]));
-	snd=MoogLadder.ar(snd,hz*40);
+	snd=MoogLadder.ar(snd,hz*SinOsc.kr(0.152).range(38,42));
 
-/*	snd=LPF.ar(snd,LinExp.kr(VarLag.kr(LFNoise0.kr(1/6),6,warp:\sine),-1,1,hz*2,18000));
+	basshz=hz;
+	basshz=Select.kr(basshz>90,[basshz,basshz/2]);
+	basshz=Select.kr(basshz>90,[basshz,basshz/2]);
+	bass=Pulse.ar(basshz,width:SinOsc.kr(1/3).range(0.2,0.4));
+	bass=bass+LPF.ar(WhiteNoise.ar(SinOsc.kr(1/rrand(3,4)).range(1,rrand(3,4))),2*basshz);
+	bass = Pan2.ar(bass,LFTri.kr(1/6.12).range(-0.2,0.2));
+	bass = HPF.ar(bass,20);
+	bass = LPF.ar(bass,SinOsc.kr(0.1).range(2,5)*basshz);
+	snd=snd+(SinOsc.kr(0.123).range(0.02,0.1)*bass);
+
+	/*	snd=LPF.ar(snd,LinExp.kr(VarLag.kr(LFNoise0.kr(1/6),6,warp:\sine),-1,1,hz*2,18000));
 	snd=HPF.ar(snd,LinExp.kr(VarLag.kr(LFNoise0.kr(1/6),6,warp:\sine),-1,1,10,hz));*/
 
 	// reverb predelay time :
-	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds-8,4]));
+	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds,4]));
 	z = DelayN.ar(snd, 0.048);
 	// 7 length modulated comb delays in parallel :
 	y = Mix.ar(Array.fill(7,{ CombL.ar(z, 0.1, LFNoise1.kr(0.1.rand, 0.04, 0.05), 15) }));
@@ -53,6 +63,6 @@
 
 	snd=HPF.ar(snd,20);
 	snd=snd/2*amp;
-	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds-8,16]));
+	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds,16]));
 	Out.ar(0,snd);
 }.play;
