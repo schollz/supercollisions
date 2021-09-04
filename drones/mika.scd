@@ -28,7 +28,7 @@
 	bass = LPF.ar(bass,SinOsc.kr(0.1).range(2,3)*basshz);
 	snd=snd+(SinOsc.kr(0.123).range(1.5,2.5)*bass);
 
-	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds,4]));
+	snd=snd*EnvGen.ar(Env.new([0,1,1,0],[4,seconds,16],\sine));
 	snd=LeakDC.ar(snd);
 	Out.ar(0,snd.tanh*(-20.dbamp))
 }.play;
