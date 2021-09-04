@@ -20,7 +20,7 @@ import glob
 import time
 import re
 
-song_time=2 #minutes
+song_time=20 #minutes
 
 song_time=song_time*60-20 #seconds
 files=list(glob.glob("*.scd"))
