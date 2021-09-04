@@ -22,7 +22,7 @@ import re
 
 song_time=2 #minutes
 
-song_time=song_time*60+8 #seconds
+song_time=song_time*60-20 #seconds
 files=list(glob.glob("*.scd"))
 for _, fname in enumerate(files):
     if "template" in fname:
@@ -40,9 +40,9 @@ for _, fname in enumerate(files):
         with open(os.path.join(dirname,fname),"w") as f2:
             f2.write("s.waitForBoot {\n")
             f2.write("""
-s.record(duration:"""+str(song_time)+""",path:"/data/"""+fname+""".aiff");
+s.record(duration:"""+str(song_time+20)+""",path:"/data/"""+fname+""".aiff");
 """)
             f2.write(data)
-            f2.write("Routine{"+str(song_time+20)+".wait; s.quit;}.play;}")
+            f2.write("Routine{"+str(song_time+22)+".wait; s.quit;}.play;}")
         os.system("""docker run -v `pwd`/"""+dirname+""":/data -d sc""")
-        time.sleep(song_time+25)
+        time.sleep(song_time+24)
