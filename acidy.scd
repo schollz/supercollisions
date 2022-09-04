@@ -134,9 +134,26 @@ SynthDef("acid2", {
 	Out.ar(outBus, out.dup);
 }).add;
 
+
+SynthDef("acid3", {
+	arg outBus=0, t_trig=1, pitch=30, amp=3.5,port=0,decay=8,res=0.1,saw=1;
+	var env1, env2, out;
+	pitch = Lag.kr([pitch,pitch+0.02], port);
+	env1 = EnvGen.ar(Env.perc(0.001,decay,4,-4), t_trig, amp);
+	env2 = EnvGen.ar(Env.perc(0.001,decay/2,600,-3), t_trig);
+	out = SelectX.ar(saw,[Pulse.ar(pitch.midicps),Saw.ar(pitch.midicps)]);
+	out = MoogLadder.ar(out, (pitch.midicps + env2)*SinOsc.kr(1/7).range(0.5,1.1),res);
+	out = LeakDC.ar((out * env1).tanh);
+	Out.ar(outBus, out);
+}).add;
+
 )
 
-Synth("acid2",[\pitch,40])
+x=Synth("acid3",[\pitch,30]);
+x.set(\t_trig,1,\port,0,\pitch,30,\decay,1);
+x.set(\t_trig,1,\port,0.4,\pitch,40,\decay,4,\res,0.9,\saw,1);
+
+
 Synth("kick",[\decay,16,\space,8])
 Synth("kick",[\decay,1,\space,1])
 

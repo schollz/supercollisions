@@ -47,16 +47,19 @@ x=Array.fill(3,{ arg i;
 )
 x.do({ arg item,i; item.set(\gate,0)});
 
-// F/C Am/C Dm Db/F
-~bseq = [Bjorklund.new(16,16).rotate([1,3,5,7].choose),[10,1,1,0,1,].scramble,[0,7,12,4,2,-1,11,12,19,24].scramble + 36+36-7].flop;
+// F/C Am/C Dm Bb/F
+~bseq2 = [Bjorklund.new(16,16).rotate([0,2,4,6].choose),[0.5,8,8,9,15].scramble,[-7,-2,0,5,7,10,12,22,24].scramble + 36 ].flop;
+~dseq = [Bjorklund.new(0,16).rotate(0), Bjorklund.new(0,12).rotate(4)*3, Bjorklund.new(0,15).rotate(2)*3, Bjorklund.new(0,16)*4, Bjorklund.new(4,16)].flop;
+~bseq = [Bjorklund.new(14,16).rotate([1,3,5,7].choose),[0.0].scramble,[0,7,12,4,2,-1,11,12,19,24].scramble + 36+36-7].flop;
 ~bseq2
-~bseq2 = [Bjorklund.new(15,16).rotate([0,2,4,6].choose),[1,1,1,10].scramble,[-7,-2,0,5,7,10,12,22,24].scramble + 36 ].flop;
+~bseq2 = [Bjorklund.new(16,16).rotate([0,2,4,6].choose),[0.5,8,8,9,15].scramble,[-7,-2,0,5,7,10,12,22,24].scramble + 36 ].flop;
 ~bseq2 = [Bjorklund.new(12,16).rotate([0,2,4,6].choose),[4,1,1,8,3,3,1,2].scramble,[-7,-7,-7,-7,-2,-2,-2,-2,0,7,10,12,22,24].scramble + 36-3 ].flop;
 ~bseq2 = [Bjorklund.new(16,16).rotate([0,2,4,6].choose),[4,1,1,8,3,3,1,2].scramble,[-7,-7,-7,-7,-2,-2,-2,-2,0,7,10,12,22,24].scramble + 36+2 ].flop;
 ~bseq2 = [Bjorklund.new(16,16).rotate([0,2,4,6].choose),[14,11,11,8,3,3,1,2].scramble,[-7,-7,-7,-7,-2,-2,-2,-2,0,7,10,12,22,24].scramble + 36-5 ].flop;
 
 
 ~dseq = [Bjorklund.new(4,12).rotate(0), Bjorklund.new(4,12).rotate(4)*3, Bjorklund.new(6,15).rotate(2)*3, Bjorklund.new(15,16)*4, Bjorklund.new(8,12)].flop;
+~dseq = [Bjorklund.new(0,16).rotate(0), Bjorklund.new(0,12).rotate(4)*3, Bjorklund.new(0,15).rotate(2)*3, Bjorklund.new(0,16)*4, Bjorklund.new(4,16)].flop;
 
 
 
@@ -245,18 +248,42 @@ Routine.run {var c; c = Condition.new; s.freeAll; TempoClock.all.do{|x|x.clear};
 
 
 		SynthDef("acid2", {
-			arg outBus=0, gate=1, pitch=20, amp=3.5;
-			var env1, env2, out;
+			arg outBus=0, gate=1, pitch=20, amp=0.5;
+			var env1, env2, out, out2;
+			var freq, wave, ctf, res, sus, dec, env, vol;
+			var  filEnv, volEnv, waves;
+			var resRand=TExpRand.kr(0.001,0.3,gate);
+			var filtRand=Lag.kr(TExpRand.kr(500,12000,gate));
+			var lfo=SinOsc.kr(0.123);
+			amp = amp*8;
 			pitch = Lag.kr(pitch, 0.12 * (1-Trig.kr(gate, 0.001)) * gate);
 			env1 = EnvGen.ar(Env.perc(0.001,0.7,4,-4), gate, amp);
-			env2 = EnvGen.ar(Env.perc(0.001,0.3,600*MouseY.kr(0.5,4),-3), gate);
-			out = LFPulse.ar(pitch.midicps, 0, 0.5);
-
-			out = MoogLadder.ar(out, 100+pitch.midicps + env2,MouseX.kr(0.01,0.2,1));
+			env2 = EnvGen.ar(Env.perc(0.001,0.3,filtRand,-3), gate);
+			// env1 = EnvGen.ar(Env.new([0.001, 2.0, 0.001, 0.001], [0.001, 2.0, 0.04], [0, -4, -4], 2), gate, amp);
+			// env2 = EnvGen.ar(Env.adsr(0.001, 0.8, 0, 0.8, 600, -4), gate);
+			out = LFPulse.ar((pitch+[lfo*0.005,lfo.neg*0.005]).midicps, 0, 0.5);
+			out = MoogLadder.ar(out, 100+pitch.midicps + env2,resRand);
 			out = LeakDC.ar((out * env1).tanh);
 
-			Out.ar(outBus, out.dup);
+			Out.ar(outBus,out);
+			// freq=pitch.midicps;
+			// wave=0;
+			// ctf=100;
+			// res=0.2;
+			// sus=0.0;
+			// dec=1.0;
+			// env=1000;
+			// volEnv =  EnvGen .ar( Env .new([10e-10, 1, 1, 10e-10], [0.01, sus, dec],  'exp' ), gate);
+			// filEnv =  EnvGen .ar( Env .new([10e-10, 1, 10e-10], [0.01, dec],  'exp' ), gate);
+			// waves = [ LFPulse .ar(freq, volEnv),  Pulse .ar(freq, 0.5, volEnv)];
+			// out2= RLPF.ar(  Select .ar(wave, waves), ctf + (filEnv * env), res)*2;
+			// out2=out2.tanh/2;
+			//
+
+			// Out.ar(outBus, SelectX.ar(MouseX.kr(),[out,out2],0).dup);
 		}).add;
+
+
 
 
 		SynthDef("fx", {
@@ -282,6 +309,12 @@ Routine.run {var c; c = Condition.new; s.freeAll; TempoClock.all.do{|x|x.clear};
 		~bseq = [Bjorklund.new(7,9).rotate([1,3,5,7].choose),[1,2,1,0, 1,1,0,2, 2,4,2,0, 1,0,1,4].scramble,[12,10,13,25,24,18,31,32, 33,23,18,6, 12,10,0,13].scramble + 31].flop;
 
 		~bseq2 = [Bjorklund.new(1,6).rotate(2),[1,2,1,0, 1,1,0,2, 2,4,2,0, 1,0,1,4].scramble,[0,6,10,12, 13,18,10,12, -2,6,6,10, 13,12,22,24].scramble + 31].flop;
+
+
+		~bseq2 = [Bjorklund.new(15,32).rotate([0,2,4,6].choose),[0.1],[-7,-2,0,5,7,10,12,22,12,22,24].scramble + 36 ].flop;
+		~dseq = [Bjorklund.new(32/4,32).rotate(0)*2, Bjorklund.new(0,32).rotate(4)*4, Bjorklund.new(0,32).rotate(2)*5, Bjorklund.new(0,16)*4, Bjorklund.new(9,16)].flop;
+		~bseq = [Bjorklund.new(0,32).rotate([1,3,5,7].choose),[2,5,8,12].scramble,[0,7,12,4,2,-1,11,12,19,24].scramble + 36+36-7].flop;
+
 
 		~pnt = 0;
 		~shf = 0.16;
@@ -321,7 +354,7 @@ Routine.run {var c; c = Condition.new; s.freeAll; TempoClock.all.do{|x|x.clear};
 			};
 			if(bass[1]>0){ ~clock.sched(delta * bass[1]/4 * 0.99, { s.bind{ ~acid.set(\gate, 0) } }) };
 
-			if(bass2[1]>0){ ~clock.sched(delta * bass2[1]/4 * 0.99, { s.bind{ ~acid2.set(\gate, 0) } }) };
+			if(bass2[1]>0){ ~clock.sched(delta * bass2[1]/4 * 0.99, { s.bind{ ~acid2.set(\gate, 0); } }) };
 
 			~pnt = ~pnt+1;
 			delta;
