@@ -17,11 +17,11 @@ SynthDef("juno",{
 	snd = Mix.ar(snd);
 	snd=snd+WhiteNoise.ar(noise);
 	// snd = RLPF.ar(snd,MouseX.kr(60,8000,1),1.0);
-	snd = MoogFF.ar(snd,300,2);
+	snd = RLPF.ar(snd,300,0.9);
 	snd = HPF.ar(snd,80);
 	snd = snd *env;
 	DetectSilence.ar(snd,doneAction:2);
-	Out.ar(0,Pan2.ar(snd));
+	Out.ar(0,Pan2.ar(snd)*0.1);
 }).add;
 )
 
