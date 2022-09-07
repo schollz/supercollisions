@@ -1,7 +1,7 @@
 (
 SynthDef("op",{
-	arg out=0,amp=1.0,bufnum,bpm_source=120,bpm_target=140,t_trig=0,rate=1,xfade=0.005,slice_factor=1,compression=0.3,init_steps=4,be_normal=1;
-	var snd,snd2,crossfade,aOrB,resetPos,retriggerNum,retriggerTrig,retriggerRate,doGate;
+	arg out=0,amp=1.0,bufnum,bpm_source=120,bpm_target=140,t_trig=0,rate=1,xfade=0.005,slice_factor=1,compression=0.3,init_steps=4,be_normal=1,reverb=0;
+	var sig,snd,snd2,crossfade,aOrB,resetPos,retriggerNum,retriggerTrig,retriggerRate,doGate;
 	var posA,posB;
 	var beatsInPhrase=32;
 	var mainPhase=Phasor.ar(1,1/s.sampleRate,0,1000000);
@@ -34,7 +34,7 @@ SynthDef("op",{
 		beatPos[1],beatPos[1],
 		beatPos[2],beatPos[2],
 		beatPos[3],beatPos[3],
-	].poll,inf)).poll;
+	],inf));
 	resetPos=resetPos+Demand.kr(changeBeatEighth,0,Dseq([
 		TRand.kr(0,slicesPlus,changeBeatStart).floor*(TRand.kr(0,1,changeBeatStart)>0.8375),
 		TRand.kr(0,slicesPlus,changeBeatStart).floor*(TRand.kr(0,1,changeBeatStart)>0.8375),
@@ -52,8 +52,8 @@ SynthDef("op",{
 		TRand.kr(0,slicesPlus,changeBeatStart).floor*(TRand.kr(0,1,changeBeatStart)>0.8375),
 		TRand.kr(0,slicesPlus,changeBeatStart).floor*(TRand.kr(0,1,changeBeatStart)>0.8375),
 		TRand.kr(0,slicesPlus,changeBeatStart).floor*(TRand.kr(0,1,changeBeatStart)>0.8375),
-	].poll,inf));
-	resetPos=resetPos.poll%slices;
+	],inf));
+	resetPos=resetPos%slices;
 	resetPos=resetPos/slices*frames;
 
 	// retrigger rate
@@ -74,9 +74,9 @@ SynthDef("op",{
 		TRand.kr(1,1.999,changeBeatEnd).floor,
 	],inf));
 	retriggerRate=retriggerRate*Select.kr(numBeat%beatsInPhrase>(beatsInPhrase-5),[1,16/retriggerRate]); // at end of each phrase
-	retriggerRate=retriggerRate*Select.kr(numBeat%beatsInPhrase>(beatsInPhrase-4),[1,TRand.kr(1,4.999,changeBeatStart).floor/2]); // at end of each phrase
-	retriggerRate=retriggerRate*Select.kr(numBeat%beatsInPhrase>(beatsInPhrase-3),[1,TRand.kr(1,4.999,changeBeatStart).floor/2]); // at end of each phrase
-	retriggerRate=retriggerRate*Select.kr(numBeat%beatsInPhrase>(beatsInPhrase-2),[1,TRand.kr(1,4.999,changeBeatStart).floor/2]); // at end of each phrase
+	retriggerRate=retriggerRate*Select.kr(numBeat%beatsInPhrase>(beatsInPhrase-4),[1,TRand.kr(1,6.999,changeBeatStart).floor/2]); // at end of each phrase
+	retriggerRate=retriggerRate*Select.kr(numBeat%beatsInPhrase>(beatsInPhrase-3),[1,TRand.kr(1,6.999,changeBeatStart).floor/2]); // at end of each phrase
+	retriggerRate=retriggerRate*Select.kr(numBeat%beatsInPhrase>(beatsInPhrase-2),[1,TRand.kr(1,6.999,changeBeatStart).floor/2]); // at end of each phrase
 	retriggerNum=(bpm_target/60*A2K.kr(mainPhase)/4*retriggerRate).floor%slices;
 	retriggerTrig=Changed.kr(retriggerNum);
 
@@ -113,8 +113,8 @@ SynthDef("op",{
 
 	snd=RLPF.ar(snd,EnvGen.kr(Env.new([130,50,130],[seconds/slices/4,seconds/slices*4]),
 		// gate
-		(numBeat%beatsInPhrase>(beatsInPhrase-5)) + 
-		(Trig.kr(changeBeat2,secondsPerSlice))
+		(numBeat%beatsInPhrase>(beatsInPhrase-5)) +
+		(Trig.kr(TRand.kr(0,1,changeBeat2)>0.95,secondsPerSlice*2))
 	).midicps,0.707);
 	// snd=snd*EnvGen.kr(Env.new([1,0,1],[seconds/slices/4,seconds/slices*2]),numBeat%beatsInPhrase>(beatsInPhrase-5));
 	// doGate=Changed.kr(changeBeat1)*LFNoise0.kr(1)>0.9;
@@ -124,7 +124,27 @@ SynthDef("op",{
 
 	//snd=Pan2.ar(snd,SinOsc.kr(bpm_target/60));
 	snd=RHPF.ar(snd,60,0.707);
-	Out.ar(out,snd*Lag.kr(amp,2)/5);
+
+	sig = snd/10;
+	sig = DelayN.ar(sig, 0.03, 0.03);
+	sig = CombN.ar(sig, 0.1, {Rand(0.01,0.099)}!32, 4);
+	sig = SplayAz.ar(2, sig);
+	sig = LPF.ar(sig, 1500);
+	5.do{sig = AllpassN.ar(sig, 0.1, {Rand(0.01,0.099)}!2, 3)};
+	sig = LPF.ar(sig, 1500);
+	sig = LeakDC.ar(sig);
+
+	snd=SelectX.ar(reverb,[snd,sig]);
+
+	Out.ar(out,snd*Lag.kr(amp,2)/2);
+}).add;
+SynthDef("kick", { |basefreq = 40, ratio = 6, sweeptime = 0.05, preamp = 1, amp = 1,
+	decay1 = 0.3, decay1L = 0.8, decay2 = 0.15, clicky=0.0, out|
+	var    fcurve = EnvGen.kr(Env([basefreq * ratio, basefreq], [sweeptime], \exp)),
+	env = EnvGen.kr(Env([clicky,1, decay1L, 0], [0.0,decay1, decay2], -4), doneAction: Done.freeSelf),
+	sig = SinOsc.ar(fcurve, 0.5pi, preamp).distort * env ;
+	sig = (sig*amp).tanh!2;
+	Out.ar(out,sig);
 }).add;
 )
 
@@ -172,20 +192,31 @@ c=Buffer.read(s,"/home/zns/Documents/supercollisions/136/James Brown - Cold Swea
 
 (
 b=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/pad_bpm120_beats64.wav");
-c=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/row1/HGAT_120_full_drum_loop_granular_key_bpm120_beats16_.flac");
+c=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/HGAT_120_full_drum_loop_granular_key_bpm120_beats16_.flac");
 d=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/fh_bs120_odybass_Am_keyAmin_bpm120_beats16_.flac");
 e=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/brake_arp_keyAmin_bpm120_beats8_.flac");
 )
+b.play
+c.play
+d.play
+e.play
 d.play;
 
 
 (
 // s.record;
-w=Synth("op",[\out,0,\bufnum,b,\bpm_source,120,\bpm_target,136,\amp,0.25,\init_steps,64,\be_normal,10]);
+w=Synth("op",[\out,0,\bufnum,b,\bpm_source,120,\bpm_target,136,\amp,0.4,\init_steps,64,\be_normal,10,\reverb,0.7]);
 x=Synth("op",[\out,0,\bufnum,c,\bpm_source,120,\bpm_target,136,\amp,0.0,\init_steps,4]);
 y=Synth("op",[\out,0,\bufnum,d,\bpm_source,120,\bpm_target,136,\amp,0.0]);
-z=Synth("op",[\out,0,\bufnum,e,\bpm_source,120,\bpm_target,136,\amp,0.0,\be_normal,0.5])
+z=Synth("op",[\out,0,\bufnum,e,\bpm_source,120,\bpm_target,136,\amp,0.0,\be_normal,0.5]);
+Routine {
+	inf.do{
+		Synth("kick");
+		(60/136*2).wait;
+	}
+}.play;
 )
+w.set(\reverb,0.7,\amp,0.5)
 z.set(\amp,0.4)
 (
 w.set(\bpm_source,120,\bpm_target,136);
