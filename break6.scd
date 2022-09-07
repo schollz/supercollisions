@@ -70,6 +70,11 @@ b=Buffer.read(s,"/home/zns/Documents/supercollisions/row1/HGAT_120_full_drum_loo
 b=Buffer.read(s,"/home/zns/Documents/supercollisions/row1/HGAT_120_full_drum_loop_granular_key_bpm120_beats16_.flac");
 
 
+
+b=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/amenbreak_bpm136.wav");
+Synth("op",[\out,0,\bufnum,b,\bpm_source,136,\bpm_target,136,\amp,0.25,\init_steps,0,\be_normal,10]);
+
+
 b.play
 (
 b=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/pad_bpm120_beats64.wav");
