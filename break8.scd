@@ -1,10 +1,17 @@
 (
+SynthDef("metronome",{
+	arg out,bpm_target;
+	var mainPhase=Phasor.ar(1,1/s.sampleRate,0,1000000);
+	var eigthBeat=(bpm_target/60*A2K.kr(mainPhase)*2).floor;
+	SendReply.kr(trig: Changed.kr(eigthBeat), cmdName: '/beat',values: [eigthBeat]);
+	Out.ar(out,mainPhase);
+}).add;
 SynthDef("op",{
-	arg out=0,amp=1.0,bufnum,bpm_source=120,bpm_target=140,t_trig=0,rate=1,xfade=0.005,slice_factor=1,compression=0.3,init_steps=4,be_normal=1,reverb=0;
+	arg out=0,amp=1.0,busin,bufnum,bpm_source=120,bpm_target=140,t_trig=0,rate=1,xfade=0.005,slice_factor=1,compression=0.3,init_steps=4,be_normal=1,reverb=0;
 	var sig,snd,snd2,crossfade,aOrB,resetPos,retriggerNum,retriggerTrig,retriggerRate,doGate;
 	var posA,posB;
 	var beatsInPhrase=32;
-	var mainPhase=Phasor.ar(1,1/s.sampleRate,0,1000000);
+	var mainPhase=In.ar(busin);
 	var slices=(BufDur.ir(bufnum)/(60/bpm_source)).round*slice_factor;
 	var slicesPlus=slices+0.999;
 	var start=Impulse.kr(0);
@@ -15,7 +22,7 @@ SynthDef("op",{
 	var changeBeat4=start+Changed.kr(numBeat%4<1);
 	var changeBeat16=start+Changed.kr(numBeat%16<1);
 	var changeBeatEnd=Trig.kr(numBeat%beatsInPhrase>(beatsInPhrase-2));
-	var changeBeatStart=Trig.kr(numBeat%beatsInPhrase<1);
+	var changeBeatStart=Trig.kr((numBeat%beatsInPhrase)<1);
 	var frames=BufFrames.ir(bufnum);
 	var seconds=BufDur.ir(bufnum)*bpm_source/bpm_target;
 	var secondsPerSlice=seconds/slices;
@@ -76,7 +83,7 @@ SynthDef("op",{
 	retriggerRate=retriggerRate*Select.kr(numBeat%beatsInPhrase>(beatsInPhrase-5),[1,16/retriggerRate]); // at end of each phrase
 	retriggerRate=retriggerRate*Select.kr(numBeat%beatsInPhrase>(beatsInPhrase-4),[1,TRand.kr(1,6.999,changeBeatStart).floor/2]); // at end of each phrase
 	retriggerRate=retriggerRate*Select.kr(numBeat%beatsInPhrase>(beatsInPhrase-3),[1,TRand.kr(1,6.999,changeBeatStart).floor/2]); // at end of each phrase
-	retriggerRate=retriggerRate*Select.kr(numBeat%beatsInPhrase>(beatsInPhrase-2),[1,TRand.kr(1,6.999,changeBeatStart).floor/2]); // at end of each phrase
+	retriggerRate=retriggerRate*Select.kr(numBeat%beatsInPhrase>(beatsInPhrase-2),[1,TRand.kr(1,2.999,changeBeatStart).floor]); // at end of each phrase
 	retriggerNum=(bpm_target/60*A2K.kr(mainPhase)/4*retriggerRate).floor%slices;
 	retriggerTrig=Changed.kr(retriggerNum);
 
@@ -111,7 +118,7 @@ SynthDef("op",{
 		phase:posB,
 	)*(1-crossfade));
 
-	snd=RLPF.ar(snd,EnvGen.kr(Env.new([130,50,130],[seconds/slices/4,seconds/slices*4]),
+	snd=RLPF.ar(snd,EnvGen.kr(Env.new([130,30,130],[seconds/slices/4,seconds/slices*4]),
 		// gate
 		(numBeat%beatsInPhrase>(beatsInPhrase-5)) +
 		(Trig.kr(TRand.kr(0,1,changeBeat2)>0.95,secondsPerSlice*2))
@@ -121,6 +128,8 @@ SynthDef("op",{
 	// snd=snd*EnvGen.kr(Env.new([1,1,0,1],[seconds/slices*0.5,seconds/slices*0.5,seconds/slices]),doGate);
 	snd=Compander.ar(snd,snd,1,1-compression,1/4,0.01,0.1);
 	snd=SelectX.ar(Lag.kr(TRand.kr(0,1,changeBeat4)>0.8),[snd,Decimator.ar(snd,6000,6)]);
+
+	// add in gating??
 
 	//snd=Pan2.ar(snd,SinOsc.kr(bpm_target/60));
 	snd=RHPF.ar(snd,60,0.707);
@@ -147,6 +156,21 @@ SynthDef("kick", { |basefreq = 40, ratio = 6, sweeptime = 0.05, preamp = 1, amp 
 	Out.ar(out,sig);
 }).add;
 )
+
+
+(
+SynthDef("kick", { |basefreq = 40, ratio = 6, sweeptime = 0.05, preamp = 1, amp = 1,
+	decay1 = 0.3, decay1L = 0.8, decay2 = 0.15, clicky=0.0, out|
+	var imp=Impulse.kr(1);
+	var    fcurve = EnvGen.kr(Env([basefreq * ratio, basefreq], [sweeptime], \exp),imp);
+	var env = EnvGen.kr(Env([clicky,1, decay1L, 0], [0.0,decay1, decay2], -4),imp);
+	var sig = SinOsc.ar(fcurve,0.5pi, preamp).distort * env ;
+	sig = (sig*amp).tanh!2;
+	Out.ar(out,sig);
+}).play;
+)
+
+
 
 Synth("op",[\out,0,\bufnum,b,\bpm_source,120,\bpm_target,136,\amp,1,\init_steps,0,\be_normal,1]);
 
@@ -195,33 +219,57 @@ b=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/pad_bpm120_beats64.wav")
 c=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/HGAT_120_full_drum_loop_granular_key_bpm120_beats16_.flac");
 d=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/fh_bs120_odybass_Am_keyAmin_bpm120_beats16_.flac");
 e=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/brake_arp_keyAmin_bpm120_beats8_.flac");
+f=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/row1/AC_Bpm120_Pattern_Am_Arp_keyAmin_bpm120_beats16_.flac");
+
 )
 b.play
 c.play
 d.play
 e.play
 d.play;
+f.play;
 
 
 (
-// s.record;
-w=Synth("op",[\out,0,\bufnum,b,\bpm_source,120,\bpm_target,136,\amp,0.4,\init_steps,64,\be_normal,10,\reverb,0.7]);
-x=Synth("op",[\out,0,\bufnum,c,\bpm_source,120,\bpm_target,136,\amp,0.0,\init_steps,4]);
-y=Synth("op",[\out,0,\bufnum,d,\bpm_source,120,\bpm_target,136,\amp,0.0]);
-z=Synth("op",[\out,0,\bufnum,e,\bpm_source,120,\bpm_target,136,\amp,0.0,\be_normal,0.5]);
+
+o.free;
 Routine {
-	inf.do{
-		Synth("kick");
-		(60/136*2).wait;
-	}
+	~met=Bus.audio(s,1);
+	o = OSCFunc({ |msg|
+		var beat=msg[3];
+		(beat%64).postln;
+		if (beat%8<1,{
+			Synth("kick",[\amp,1]);
+		});
+		if (beat%16<1,{
+			Synth("kick",[\amp,1]);
+		});
+		if ((beat%4<1)&&(rrand(0,100)<20),{
+			Synth("kick",[\amp,1]);
+		});
+		if (rrand(0,100)<10,{
+			Synth("kick",[\amp,1]);
+		});
+		if (beat%64>57,{
+			Synth("kick",[\amp,1]);
+		});
+	}, '/beat');
+	x=Synth("metronome",[\out,~met,\bpm_target,136]);
+	// s.record;
+	w=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,b,\bpm_source,120,\bpm_target,136,\amp,0.4,\init_steps,64,\be_normal,10,\reverb,0.7]);
+	v=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,c,\bpm_source,120,\bpm_target,136,\amp,0.0,\init_steps,4]);
+	y=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,d,\bpm_source,120,\bpm_target,136,\amp,0.0]);
+	z=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,e,\bpm_source,120,\bpm_target,136,\amp,0.0,\be_normal,0.5]);
+	u=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,f,\bpm_source,120,\bpm_target,136,\amp,0.0,\be_normal,0.5]);
+
 }.play;
 )
-w.set(\reverb,0.7,\amp,0.5)
-z.set(\amp,0.4)
+w.set(\reverb,0.94,\amp,1.5)
+z.set(\amp,0.0)
+u.set(\amp,0.4)
 (
-w.set(\bpm_source,120,\bpm_target,136);
-x.set(\amp,0.6);
-y.set(\amp,0.4);
+v.set(\amp,0.65);
+y.set(\amp,0.5);
 z.set(\amp,0.2 );
 )
 (
