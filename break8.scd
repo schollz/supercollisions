@@ -10,7 +10,7 @@ SynthDef("op",{
 	var start=Impulse.kr(0);
 	var numBeat=(bpm_target/60*A2K.kr(mainPhase)).floor;
 	var changeBeat1=start+Changed.kr(numBeat);
-	var changeBeatEighth=start+Changed.kr((bpm_target/60*A2K.kr(mainPhase)*2).floor;);
+	var changeBeatEighth=start+Changed.kr((bpm_target/60*A2K.kr(mainPhase)*2).floor);
 	var changeBeat2=start+Changed.kr(numBeat%2<1);
 	var changeBeat4=start+Changed.kr(numBeat%4<1);
 	var changeBeat16=start+Changed.kr(numBeat%16<1);
@@ -18,6 +18,7 @@ SynthDef("op",{
 	var changeBeatStart=Trig.kr(numBeat%beatsInPhrase<1);
 	var frames=BufFrames.ir(bufnum);
 	var seconds=BufDur.ir(bufnum)*bpm_source/bpm_target;
+	var secondsPerSlice=seconds/slices;
 	var beatPos=[
 		TRand.kr(0,slicesPlus,changeBeatStart).floor,
 		TRand.kr(0,slicesPlus,changeBeatStart).floor,
@@ -52,9 +53,6 @@ SynthDef("op",{
 		TRand.kr(0,slicesPlus,changeBeatStart).floor*(TRand.kr(0,1,changeBeatStart)>0.8375),
 		TRand.kr(0,slicesPlus,changeBeatStart).floor*(TRand.kr(0,1,changeBeatStart)>0.8375),
 	].poll,inf));
-	// resetPos=resetPos*TRand.kr(1,15.9,changeBeat16).floor;
-	// resetPos=resetPos+TRand.kr(0,15.9,changeBeat16).floor;
-	// resetPos=resetPos+TRand.kr(0,15.9,changeBeat1).floor;
 	resetPos=resetPos.poll%slices;
 	resetPos=resetPos/slices*frames;
 
@@ -75,11 +73,10 @@ SynthDef("op",{
 		TRand.kr(1,2.999,changeBeatEnd).floor,
 		TRand.kr(1,1.999,changeBeatEnd).floor,
 	],inf));
-	// TWChoose.kr(changeBeat4,[1,2,4,8],[2*be_normal,0.1,0.05,0.025],1);
 	retriggerRate=retriggerRate*Select.kr(numBeat%beatsInPhrase>(beatsInPhrase-5),[1,16/retriggerRate]); // at end of each phrase
-	retriggerRate=retriggerRate*Select.kr(numBeat%beatsInPhrase>(beatsInPhrase-4),[1,TRand.kr(1,2.999,changeBeatStart).floor]); // at end of each phrase
-	retriggerRate=retriggerRate*Select.kr(numBeat%beatsInPhrase>(beatsInPhrase-3),[1,TRand.kr(1,2.999,changeBeatStart).floor]); // at end of each phrase
-	retriggerRate=retriggerRate*Select.kr(numBeat%beatsInPhrase>(beatsInPhrase-2),[1,TRand.kr(1,2.999,changeBeatStart).floor]); // at end of each phrase
+	retriggerRate=retriggerRate*Select.kr(numBeat%beatsInPhrase>(beatsInPhrase-4),[1,TRand.kr(1,4.999,changeBeatStart).floor/2]); // at end of each phrase
+	retriggerRate=retriggerRate*Select.kr(numBeat%beatsInPhrase>(beatsInPhrase-3),[1,TRand.kr(1,4.999,changeBeatStart).floor/2]); // at end of each phrase
+	retriggerRate=retriggerRate*Select.kr(numBeat%beatsInPhrase>(beatsInPhrase-2),[1,TRand.kr(1,4.999,changeBeatStart).floor/2]); // at end of each phrase
 	retriggerNum=(bpm_target/60*A2K.kr(mainPhase)/4*retriggerRate).floor%slices;
 	retriggerTrig=Changed.kr(retriggerNum);
 
@@ -114,7 +111,11 @@ SynthDef("op",{
 		phase:posB,
 	)*(1-crossfade));
 
-	snd=RLPF.ar(snd,EnvGen.kr(Env.new([130,50,130],[seconds/slices/4,seconds/slices*4]),numBeat%beatsInPhrase>(beatsInPhrase-5)).midicps,0.707);
+	snd=RLPF.ar(snd,EnvGen.kr(Env.new([130,50,130],[seconds/slices/4,seconds/slices*4]),
+		// gate
+		(numBeat%beatsInPhrase>(beatsInPhrase-5)) + 
+		(Trig.kr(changeBeat2,secondsPerSlice))
+	).midicps,0.707);
 	// snd=snd*EnvGen.kr(Env.new([1,0,1],[seconds/slices/4,seconds/slices*2]),numBeat%beatsInPhrase>(beatsInPhrase-5));
 	// doGate=Changed.kr(changeBeat1)*LFNoise0.kr(1)>0.9;
 	// snd=snd*EnvGen.kr(Env.new([1,1,0,1],[seconds/slices*0.5,seconds/slices*0.5,seconds/slices]),doGate);
@@ -190,7 +191,7 @@ z.set(\amp,0.4)
 w.set(\bpm_source,120,\bpm_target,136);
 x.set(\amp,0.6);
 y.set(\amp,0.4);
-z.set(\amp,0.2);
+z.set(\amp,0.2 );
 )
 (
 x.set(\amp,0.0);
