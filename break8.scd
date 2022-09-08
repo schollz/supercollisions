@@ -118,9 +118,9 @@ SynthDef("op",{
 		phase:posB,
 	)*(1-crossfade));
 
-	snd=RLPF.ar(snd,EnvGen.kr(Env.new([130,30,130],[seconds/slices/4,seconds/slices*4]),
+	snd=RLPF.ar(snd,EnvGen.kr(Env.new([130,45,130],[seconds/slices/4,seconds/slices*4]),
 		// gate
-		(numBeat%beatsInPhrase>(beatsInPhrase-5)) +
+		(numBeat%beatsInPhrase>(beatsInPhrase-4)) +
 		(Trig.kr(TRand.kr(0,1,changeBeat2)>0.95,secondsPerSlice*2))
 	).midicps,0.707);
 	// snd=snd*EnvGen.kr(Env.new([1,0,1],[seconds/slices/4,seconds/slices*2]),numBeat%beatsInPhrase>(beatsInPhrase-5));
@@ -155,19 +155,6 @@ SynthDef("kick", { |basefreq = 40, ratio = 6, sweeptime = 0.05, preamp = 1, amp 
 	sig = (sig*amp).tanh!2;
 	Out.ar(out,sig);
 }).add;
-)
-
-
-(
-SynthDef("kick", { |basefreq = 40, ratio = 6, sweeptime = 0.05, preamp = 1, amp = 1,
-	decay1 = 0.3, decay1L = 0.8, decay2 = 0.15, clicky=0.0, out|
-	var imp=Impulse.kr(1);
-	var    fcurve = EnvGen.kr(Env([basefreq * ratio, basefreq], [sweeptime], \exp),imp);
-	var env = EnvGen.kr(Env([clicky,1, decay1L, 0], [0.0,decay1, decay2], -4),imp);
-	var sig = SinOsc.ar(fcurve,0.5pi, preamp).distort * env ;
-	sig = (sig*amp).tanh!2;
-	Out.ar(out,sig);
-}).play;
 )
 
 
@@ -222,6 +209,14 @@ e=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/brake_arp_keyAmin_bpm120
 f=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/row1/AC_Bpm120_Pattern_Am_Arp_keyAmin_bpm120_beats16_.flac");
 
 )
+(
+b=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/SEB_120_Am_PadLoop_05_keyAmin_bpm120_beats32_.flac");
+c=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/shs_roam_breaks_loop_120_surge_full_key_bpm120_beats32_.flac");
+d=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/fh_bs120_odybass_Am_keyAmin_bpm120_beats16_.flac");
+e=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/016_Pad_Strings__Loop_Seamlessly__A_Minor_120bpm_-_ORGANICHOUSE_Zenhiser_keyAmin_bpm120_beats64_.flac");
+f=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/rw_insp120_usa_key_Am_keyAmin_bpm120_beats16_.flac");
+
+)
 b.play
 c.play
 d.play
@@ -244,7 +239,7 @@ Routine {
 		if (beat%16<1,{
 			Synth("kick",[\amp,1]);
 		});
-		if ((beat%4<1)&&(rrand(0,100)<20),{
+		if ((beat%4<1)&&(rrand(0,100)<50),{
 			Synth("kick",[\amp,1]);
 		});
 		if (rrand(0,100)<10,{
@@ -256,7 +251,7 @@ Routine {
 	}, '/beat');
 	x=Synth("metronome",[\out,~met,\bpm_target,136]);
 	// s.record;
-	w=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,b,\bpm_source,120,\bpm_target,136,\amp,0.4,\init_steps,64,\be_normal,10,\reverb,0.7]);
+	w=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,b,\bpm_source,120,\bpm_target,136,\amp,1.2,\init_steps,64,\be_normal,10,\reverb,0.7]);
 	v=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,c,\bpm_source,120,\bpm_target,136,\amp,0.0,\init_steps,4]);
 	y=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,d,\bpm_source,120,\bpm_target,136,\amp,0.0]);
 	z=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,e,\bpm_source,120,\bpm_target,136,\amp,0.0,\be_normal,0.5]);
@@ -264,9 +259,9 @@ Routine {
 
 }.play;
 )
-w.set(\reverb,0.94,\amp,1.5)
-z.set(\amp,0.0)
-u.set(\amp,0.4)
+w.set(\reverb,0.1,\amp,1.0)
+z.set(\amp,0.1)
+u.set(\amp,0.0)
 (
 v.set(\amp,0.65);
 y.set(\amp,0.5);
