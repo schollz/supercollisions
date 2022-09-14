@@ -23,21 +23,6 @@ SynthDef(\glitch,{
 	Out.ar(\out.kr(0),snd);
 }).add;
 
-SynthDef(\fx,{
-	var snd;
-	snd = In.ar(\out.kr(0), 2);
-	snd = (snd * 30.dbamp).tanh * -10.dbamp;
-	snd = SelectX.ar(\decimator.kr(1).lag(0.01), [snd, Latch.ar(snd, Impulse.ar(LFNoise2.kr(0.3).exprange(1000,16e3)))]);
-	snd = SelectX.ar(\pitch1.kr(1).lag(0.01), [snd, PitchShift.ar(snd, 0.2, 2)]);
-	snd = SelectX.ar(\pitch2.kr(1).lag(0.01), [snd, PitchShift.ar(snd, 0.03, 1.4)]);
-	snd = BHiShelf.ar(BLowShelf.ar(snd, 500, 1, -10), 3000, 1, -10);
-	snd = (snd * 10.dbamp).tanh * -10.dbamp;
-	snd = BHiShelf.ar(BLowShelf.ar(snd, 500, 1, 10), 3000, 1, 10);
-	snd = snd * -20.dbamp;
-	ReplaceOut.ar(\out.kr(0), snd);
-}).add;
-
-
 SynthDef(\bass,{
 	arg freq=300;
 	var snd;
@@ -54,56 +39,22 @@ SynthDef(\bass,{
 	Out.ar(\out.kr(0),snd);
 }).add;
 
+
+SynthDef(\fx,{
+	var snd;
+	snd = In.ar(\in.kr(0), 2);
+	snd = (snd * 30.dbamp).tanh * -10.dbamp;
+	snd = SelectX.ar(\decimator.kr(1).lag(0.01), [snd, Latch.ar(snd, Impulse.ar(LFNoise2.kr(0.3).exprange(1000,16e3)))]);
+	snd = SelectX.ar(\pitch1.kr(1).lag(0.01), [snd, PitchShift.ar(snd, 0.2, 2)]);
+	snd = SelectX.ar(\pitch2.kr(1).lag(0.01), [snd, PitchShift.ar(snd, 0.03, 1.4)]);
+	snd = BHiShelf.ar(BLowShelf.ar(snd, 500, 1, -10), 3000, 1, -10);
+	snd = (snd * 10.dbamp).tanh * -10.dbamp;
+	snd = BHiShelf.ar(BLowShelf.ar(snd, 500, 1, 10), 3000, 1, 10);
+	snd = snd * -20.dbamp;
+	Out.ar(\out.kr(0), snd);
+}).add;
+
 )
-
-
-Synth(\bass,[\freq,800])
-
-
-Synth(\glitch,[\modFreq,240,\index,3400, \carrierFreq,1500])
-(
-~string="
-0
-1
-2
-3
-4
-5
-6
-7
-8
-9
-a
-b
-c
-d
-e
-f
-c
-c pitch=2 repeat=2
-c pitch=4 repeat=3
-c pitch=6
-0
-1
-2
-3
-c
-c pitch=-2 repeat=2
-c pitch=-4 repeat=3
-c pitch=-6
-0
-1
-2
-3
-c
-c repeat=2
-c repeat=2
-c repeat=4
-c repeat=4
-
-";
-)
-
 
 (
 ~string="
@@ -135,25 +86,17 @@ h
 ";
 )
 
-
-b="test pitch=2 repeat=4"
-(
-b.split($ ).do({ arg v;
-	v.postln;
-});
-)
-
-Synth(\bass)
 (
 Routine {
-	var s, bpm, beat, tatum, fx, slices;
+	var s, bpm, beat, tatum, fx, slices, busFx;
 	slices = (~buffer.duration/(60/120)).round*2;
 	bpm = 120/2;
 	beat = 60 / bpm;
 	tatum = beat / 4;
 	s = Server.default.postln;
 
-	fx = Synth.tail(s, \fx);
+	busFx = Bus.audio(s,2);
+	fx = Synth.tail(s, \fx, [\in, busFx]);
 	s.sync;
 
 	loop {
@@ -186,6 +129,7 @@ Routine {
 						switch (parts[0][0],
 							$g, {
 								synth = Synth.head(s,\glitch, [
+									out: busFx,
 									modFreq: exprand(100,3000),
 									carrierFreq: exprand(100, 3000) * pitch.midiratio.postln,
 									index: rrand(100,8000),
@@ -194,12 +138,14 @@ Routine {
 							},
 							$h, {
 								synth = Synth.head(s,\bass, [
+									out: busFx,
 									freq: rrand(100,400),
 									pan: rrand(-0.9,0.9),
 								]);
 							},
 							{
-								synth = Synth(\slice, [
+								synth = Synth.head(s,\slice, [
+									out: busFx,
 									buf: ~buffer,
 									slices: slices,
 									slice: "0123456789abcdef".indexOf(parts[0][0]).postln,
