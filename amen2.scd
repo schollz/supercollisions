@@ -51,6 +51,7 @@ SynthDef(\fx,{
 	snd = (snd * 10.dbamp).tanh * -10.dbamp;
 	snd = BHiShelf.ar(BLowShelf.ar(snd, 500, 1, 10), 3000, 1, 10);
 	snd = snd * -20.dbamp;
+	snd = RLPF.ar(snd,LinExp.kr(\filter.kr(100).lag(0.2)+0.01,0.01,1,100,16000),0.707);
 	Out.ar(\out.kr(0), snd);
 }).add;
 
@@ -58,7 +59,7 @@ SynthDef(\fx,{
 
 (
 ~string="
-0 repeat=1 gate=50
+0 repeat=1 gate=50 filter=99
 1 repeat=1 gate=50
 2 gate=50
 2 repeat=1 pitch=1 gate=50
@@ -66,10 +67,10 @@ SynthDef(\fx,{
 2 repeat=4 pitch=3 gate=50
 g
 0
-1
-2
-h
-4
+1 decimate=50
+2 decimate=99
+h decimate=99
+4 decimate=50
 5
 5 repeat=2
 5 repeat=4
@@ -79,10 +80,10 @@ h
 4 repeat=1
 5 repeat=1
 6
-0
-0 repeat=2
-0 repeat=4
-0 repeat=6
+0 filter=50 
+0 repeat=2 filter=25
+0 repeat=4 filter=10
+0 repeat=6 filter=2
 ";
 )
 
@@ -107,6 +108,8 @@ Routine {
 			var pitch = 0;
 			var repeat = 1;
 			var gate = 100;
+			var filter = 100;
+			var decimate = 100;
 			parts = line.stripWhiteSpace.split($ );
 			if (parts[0].size > 0) {
 				parts.do { |part|
@@ -119,13 +122,20 @@ Routine {
 					if (part[.."gate".size - 1]=="gate") {
 						gate = part.split($=)[1].asInteger;
 					};
+					if (part[.."filter".size - 1]=="filter") {
+						filter = part.split($=)[1].asFloat / 100.0;
+					};
+					if (part[.."decimate".size - 1]=="decimate") {
+						decimate = part.split($=)[1].asFloat / 100.0;
+					};
 				};
 
 				time = time + 1;
 				fx.set(*[
 					pitch1: (time % 16 / 16 * 0.1).coin,
 					pitch2: (time % 16 / 16 * 0.1).coin,
-					decimator: (time % 16 / 16 * 0.1).coin
+					decimator: decimate,
+					filter: filter,
 				]);
 				repeat.do {
 					var duration= tatum / repeat * gate / 100;
