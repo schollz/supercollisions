@@ -8,7 +8,7 @@ SynthDef(\slice,{
 	snd = PlayBuf.ar(2,\buf.kr(0),BufRateScale.kr(\buf.kr(0)) * \rate.kr(1),
 		startPos: BufFrames.kr(\buf.kr(0)) * \slice.kr(0) / \slices.kr(16));
 	snd = snd * Env.linen(0, BufDur.kr(\buf.kr(0)) / \slices.kr(16), 0.01).ar;
-	snd = snd * Env.asr(0.001, 1, 0.01).ar(Done.freeSelf, \gate.kr(1));
+	snd = snd * Env.asr(0.001, 1, 0.01).ar(Done.freeSelf, \gate.kr(1) * (1-TDelay.kr(Impulse.kr(0),\duration.kr(100000))) );
 	snd = snd * -6.dbamp ! 2;
 	Out.ar(\out.kr(0),snd);
 }).add;
@@ -17,7 +17,7 @@ SynthDef(\glitch,{
 	var snd;
 	snd = SinOsc.ar((SinOsc.ar(\modFreq.kr(3240)) * Env.perc(0.01,2).kr * \index.kr(3000) + \carrierFreq.kr(1000)).poll);
 	snd = snd + PitchShift.ar(snd, Rand(0.03, 0.06), 2);
-	snd = snd * Env.asr(0.001, 0.1, 0.01).ar(Done.freeSelf, \gate.kr(1));
+	snd = snd * Env.asr(0.001, 0.1, 0.01).ar(Done.freeSelf, \gate.kr(1) * (1-TDelay.kr(Impulse.kr(0),\duration.kr(100000))) );
 	snd = snd * -6.dbamp ! 2;
 	snd = Pan2.ar(snd, \pan.kr(0));
 	Out.ar(\out.kr(0),snd);
@@ -58,12 +58,12 @@ SynthDef(\fx,{
 
 (
 ~string="
-0 repeat=1
-1 repeat=1
-2
-2 repeat=1 pitch=1
-2 repeat=2 pitch=2
-2 repeat=4 pitch=3
+0 repeat=1 gate=50
+1 repeat=1 gate=50
+2 gate=50
+2 repeat=1 pitch=1 gate=50
+2 repeat=2 pitch=2 gate=50
+2 repeat=4 pitch=3 gate=50
 g
 0
 1
@@ -106,15 +106,18 @@ Routine {
 			var parts;
 			var pitch = 0;
 			var repeat = 1;
+			var gate = 100;
 			parts = line.stripWhiteSpace.split($ );
 			if (parts[0].size > 0) {
 				parts.do { |part|
-					part.postln;
 					if (part[.."pitch".size - 1]=="pitch") {
 						pitch = part.split($=)[1].asInteger;
 					};
 					if (part[.."repeat".size - 1]=="repeat") {
 						repeat = part.split($=)[1].asInteger;
+					};
+					if (part[.."gate".size - 1]=="gate") {
+						gate = part.split($=)[1].asInteger;
 					};
 				};
 
@@ -125,6 +128,7 @@ Routine {
 					decimator: (time % 16 / 16 * 0.1).coin
 				]);
 				repeat.do {
+					var duration= tatum / repeat * gate / 100;
 					s.makeBundle(s.latency,{
 						switch (parts[0][0],
 							$g, {
@@ -134,6 +138,7 @@ Routine {
 									carrierFreq: exprand(100, 3000) * pitch.midiratio.postln,
 									index: rrand(100,8000),
 									pan: rrand(-0.9,0.9),
+									duration: duration,
 								]);
 							},
 							$h, {
@@ -151,11 +156,12 @@ Routine {
 									slice: "0123456789abcdef".indexOf(parts[0][0]).postln,
 									rate: 1.0 * pitch.midiratio.postln,
 									pan: rrand(-0.3,0.3),
+									duration: duration,
 								]);
 							}
 						);
 					});
-					(tatum / repeat.postln).wait;
+					(tatum / repeat).wait;
 					s.makeBundle(s.latency, {
 						synth.set(\gate, 0);
 					});
