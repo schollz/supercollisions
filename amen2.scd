@@ -1,12 +1,32 @@
-~buffer = Buffer.read(Server.default, thisProcess.nowExecutingPath.dirname++"/shs_roam_breaks_loop_120_surge_full_key_bpm120_beats32_.flac");
 
-~buffer.duration/(60/136)
 
 (
 SynthDef(\slice,{
 	var snd;
 	snd = PlayBuf.ar(2,\buf.kr(0),BufRateScale.kr(\buf.kr(0)) * \rate.kr(1),
 		startPos: BufFrames.kr(\buf.kr(0)) * \slice.kr(0) / \slices.kr(16));
+	snd = snd * Env.linen(0, BufDur.kr(\buf.kr(0)) / \slices.kr(16), 0.01).ar;
+	snd = snd * Env.asr(0.001, 1, 0.01).ar(Done.freeSelf, \gate.kr(1) * (1-TDelay.kr(Impulse.kr(0),\duration.kr(100000))) );
+	snd = snd * -6.dbamp ! 2;
+	Out.ar(\out.kr(0),snd);
+}).add;
+
+SynthDef(\sliceStretch,{
+	var rate = BufRateScale.ir(\buf.kr(0)) * \rate.kr(1);
+	var startPos = BufFrames.kr(\buf.kr(0)) * \slice.kr(0) / \slices.kr(16);
+	var pos = Phasor.ar(
+		rate: rate / LinLin.kr(\stretch.kr(1).sin,-1,1,2,10),
+		start: startPos,
+		end: BufFrames.ir(\buf.kr(0)),
+		resetPos: startPos,
+	);
+	var window = Phasor.ar(
+		rate: rate,
+		start: pos,
+		end: pos + (LinExp.kr(\stretch.kr(1).cos,-1,1,0.01,1)*44100),
+		resetPos: pos,
+	);
+	var snd = BufRd.ar(2, \buf.kr(0), window, loop:1, interpolation:4);
 	snd = snd * Env.linen(0, BufDur.kr(\buf.kr(0)) / \slices.kr(16), 0.01).ar;
 	snd = snd * Env.asr(0.001, 1, 0.01).ar(Done.freeSelf, \gate.kr(1) * (1-TDelay.kr(Impulse.kr(0),\duration.kr(100000))) );
 	snd = snd * -6.dbamp ! 2;
@@ -88,11 +108,18 @@ h decimate=99
 )
 
 (
+Buffer.read(Server.default, thisProcess.nowExecutingPath.dirname++"/shs_roam_breaks_loop_120_surge_full_key_bpm120_beats32_.flac", action: {arg buf;
+	~bpm_source=120;
+	~buffer=buf;
+	~slices=(buf.duration/(60/~bpm_source));
+});
+);
+
+(
 Routine {
-	var s, bpm, beat, tatum, fx, slices, busFx;
-	slices = (~buffer.duration/(60/120)).round*2;
-	bpm = 120/2;
-	beat = 60 / bpm;
+	var s, bpm, beat, tatum, fx, busFx;
+	bpm = 120;
+	beat = 60 / bpm / 2;
 	tatum = beat / 4;
 	s = Server.default.postln;
 
@@ -110,6 +137,7 @@ Routine {
 			var gate = 100;
 			var filter = 100;
 			var decimate = 100;
+			var stretch = 0;
 			parts = line.stripWhiteSpace.split($ );
 			if (parts[0].size > 0) {
 				parts.do { |part|
@@ -159,12 +187,17 @@ Routine {
 								]);
 							},
 							{
+								var synthName = \slice;
+								if (stretch > 0) {
+									synthName = \sliceStretch;
+								}
 								synth = Synth.head(s,\slice, [
 									out: busFx,
 									buf: ~buffer,
-									slices: slices,
+									slices: ~slices,
 									slice: "0123456789abcdef".indexOf(parts[0][0]).postln,
-									rate: 1.0 * pitch.midiratio.postln,
+									rate: bpm / ~bpm_source * pitch.midiratio.postln,
+									stretch: stretch,
 									pan: rrand(-0.3,0.3),
 									duration: duration,
 								]);
