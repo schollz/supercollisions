@@ -36,9 +36,13 @@ SynthDef(\pad2,{
 SynthDef(\padFx, {
 	var snd, env;
 	snd = In.ar(\out.kr(0), 2);
+	//snd = MoogFF.ar(snd, Phasor.kr(1,1/44100*(700),70,130,70).midicps.poll, 0);
+	snd = snd * -10.dbamp;
 	snd = snd + (NHHall.ar(snd, 8, modDepth: 1) * -5.dbamp);
 	snd = snd + PitchShift.ar(snd, 0.2, 0.5);
 	snd = snd + PitchShift.ar(snd, 0.13, 0.2);
+	snd = snd + PitchShift.ar(snd, 0.2, 0.5);
+	//snd = snd + PitchShift.ar(snd, 0.13, 2.0,mul:0.1);
 	snd = DelayC.ar(snd, 0.2, SinOsc.ar(0.3, [0, pi]).linlin(-1,1,0,0.001));
 	env = Env.perc(0.2, 0.5, curve: -2).kr(Done.none, \gate.tr(0));
 	snd = snd * (1 - (0.9 * env));
@@ -148,12 +152,13 @@ Routine {
 							j=j+1;
 						});
 					};
-					(4*beat).wait;
+					(3.5*beat).wait;
 					synths.do { |synth|
 						s.makeBundle(s.latency,{
 							synth.set(\gate,0);
 						});
 					};
+					(0.5*beat).wait;
 				};
 			};
 		};
