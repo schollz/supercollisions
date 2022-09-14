@@ -8,6 +8,7 @@ SynthDef(\slice,{
 	snd = snd * Env.linen(0, BufDur.kr(\buf.kr(0)) / \slices.kr(16), 0.01).ar;
 	snd = snd * Env.asr(0.001, 1, 0.01).ar(Done.freeSelf, \gate.kr(1) * (1-TDelay.kr(Impulse.kr(0),\duration.kr(100000))) );
 	snd = snd * -6.dbamp ! 2;
+	snd = snd * EnvGen.ar(Env.new([1-\rampup.kr(0),1],[\duration.kr(100000)]),\rampup.kr(0));
 	Out.ar(\out.kr(0),snd);
 }).add;
 
@@ -15,7 +16,7 @@ SynthDef(\sliceStretch,{
 	var rate = BufRateScale.ir(\buf.kr(0)) * \rate.kr(1);
 	var startPos = BufFrames.kr(\buf.kr(0)) * \slice.kr(0) / \slices.kr(16);
 	var pos = Phasor.ar(
-		rate: rate / LinLin.kr(\stretch.kr(1).sin,-1,1,2,10),
+		rate: rate / LinLin.kr((6.283185307*\stretch.kr(1)).sin,-1,1,2,10),
 		start: startPos,
 		end: BufFrames.ir(\buf.kr(0)),
 		resetPos: startPos,
@@ -23,7 +24,7 @@ SynthDef(\sliceStretch,{
 	var window = Phasor.ar(
 		rate: rate,
 		start: pos,
-		end: pos + (LinExp.kr(\stretch.kr(1).cos,-1,1,0.01,1)*44100),
+		end: pos + (LinExp.kr((6.283185307*\stretch.kr(1)).cos,-1,1,0.01,1)*44100),
 		resetPos: pos,
 	);
 	var snd = BufRd.ar(2, \buf.kr(0), window, loop:1, interpolation:4);
@@ -78,7 +79,7 @@ SynthDef(\fx,{
 )
 
 (
-~string="
+~track1="
 0 repeat=1 gate=50 filter=99
 1 repeat=1 gate=50
 2 gate=50
@@ -128,16 +129,17 @@ Routine {
 	s.sync;
 
 	loop {
+		var stretch = 0;
+		var gate = 100;
+		var filter = 100;
 		var time = 0;
-		~string.split($\n).do { |line|
+		~track1.split($\n).do { |line,i|
 			var synth;
 			var parts;
 			var pitch = 0;
 			var repeat = 1;
-			var gate = 100;
-			var filter = 100;
 			var decimate = 100;
-			var stretch = 0;
+			var rampup = 0;
 			parts = line.stripWhiteSpace.split($ );
 			if (parts[0].size > 0) {
 				parts.do { |part|
@@ -155,6 +157,12 @@ Routine {
 					};
 					if (part[.."decimate".size - 1]=="decimate") {
 						decimate = part.split($=)[1].asFloat / 100.0;
+					};
+					if (part[.."stretch".size - 1]=="stretch") {
+						stretch = part.split($=)[1].asFloat / 100.0;
+					};
+					if (part[.."rampup".size - 1]=="rampup") {
+						rampup = part.split($=)[1].asInteger>0;
 					};
 				};
 
@@ -177,6 +185,7 @@ Routine {
 									index: rrand(100,8000),
 									pan: rrand(-0.9,0.9),
 									duration: duration,
+									rampup: rampup,
 								]);
 							},
 							$h, {
@@ -200,6 +209,7 @@ Routine {
 									stretch: stretch,
 									pan: rrand(-0.3,0.3),
 									duration: duration,
+									rampup: rampup,
 								]);
 							}
 						);
