@@ -43,8 +43,7 @@ SynthDef(\padFx, {
 	snd = snd * (1 - (0.9 * env));
 	snd = MoogFF.ar(snd, 9000 * (1 - (0.5 *env)) + 100, 0);
 	snd = snd + NHHall.ar(snd, 2);
-	snd = snd * -5.dbamp;
-	ReplaceOut.ar(\out.kr(0), snd);
+	ReplaceOut.ar(\out.kr(0), snd * 6.dbamp);
 }).add;
 
 )
@@ -67,7 +66,7 @@ Routine {
 	padBus = Bus.audio(s, 2);
 	padGroup = Group();
 
-	bpm = 70;
+	bpm = 60;
 	beat = 60/bpm;
 
 	padFx = Synth.tail(padGroup, \padFx, [in: padBus, out:0,  gate: 0]);
