@@ -43,6 +43,7 @@ SynthDef(\padFx, {
 	snd = snd * (1 - (0.9 * env));
 	snd = MoogFF.ar(snd, 9000 * (1 - (0.5 *env)) + 100, 0);
 	snd = snd + NHHall.ar(snd, 2);
+	snd = LPF.ar(snd, MouseY.kr(100,20000,1));
 	ReplaceOut.ar(\out.kr(0), snd * 6.dbamp);
 }).add;
 
