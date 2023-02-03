@@ -1,11 +1,11 @@
 (
 s.waitForBoot({
     SynthDef("stretch",{
-        arg buf,pos=0,xfade=0.05,slowdown=4;
+        arg buf,pos=0,xfade=0.05,slowdown=4,windowSeconds=0.1;
         var windowSelect,window,window1,window2,windowStart,windowTrig;
         var snd,snd1,snd2;
         var frames=BufFrames.ir(buf);
-        var windowFrames=s.sampleRate;
+        var windowFrames=(s.sampleRate*windowSeconds).round;
         var playRate=BufRateScale.ir(buf);
         var phase = Phasor.ar(
             rate: playRate/slowdown,
