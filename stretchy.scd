@@ -1,18 +1,18 @@
 (
 s.waitForBoot({
     SynthDef("stretch",{
-        arg buf,pos=0.5,xfade=0.05,slowdown=4,windowSeconds=0.1;
+        arg buf,pos=0.3,xfade=0.05,slowdown=4,windowSeconds=0.1;
         var windowSelect,window,window1,window2,windowStart,windowTrig;
         var snd,snd1,snd2;
         var frames=BufFrames.ir(buf);
         var windowFrames=(s.sampleRate*windowSeconds).round;
         var playRate=BufRateScale.ir(buf);
         var phase = Phasor.ar(
-			rate: playRate/MouseY.kr(1,200).poll,
-            start:pos*frames,
+			rate: playRate/EnvGen.kr(Env.new([Rand(6,8),Rand(8,12)],[Rand(2,8)]),timeScale:1),
+            start:pos.poll*frames,
             end:48000000,
         );
-		windowFrames=MouseX.kr(0.02,4)*windowFrames;
+		windowFrames=EnvGen.kr(Env.new([Rand(0.2,0.8),Rand(0.5,2),Rand(0.05,0.1),Rand(2,5),Rand(0.02,0.05)],[Rand(0.05,0.3),Rand(1,3),Rand(0.5,2),Rand(1,3)]),timeScale:1)*windowFrames;
         windowTrig=LocalIn.ar(1);
         windowStart=Gate.ar(phase,windowTrig);
         windowSelect=ToggleFF.ar(windowTrig);
@@ -41,7 +41,7 @@ s.waitForBoot({
         Out.ar(0,snd);
     }).send(s);
     s.sync;
-    b=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/beats16_bpm150_Ultimate_Jack_Loops_014__BPM_150_.wav");
+    b=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/amenbreak_bpm136.wav");
     s.sync;
     Synth("stretch",[\buf,b]);
 });
