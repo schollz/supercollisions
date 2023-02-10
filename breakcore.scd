@@ -6,11 +6,11 @@ c=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/beats16_bpm150_Ultimate_
 
 (
 x=SynthDef("quantizedbreaks",{
-	arg out=0,amp=0.5,bpmsource=150,bpm=150,t_trig=0,bufnum,bufnumtemp;
+	arg out=0,amp=0.5,bpmsource=150,bpm=200,t_trig=0,bufnum,bufnumtemp;
 	var playbuf,snd,rate,tempotrigger;
 	tempotrigger=Impulse.kr(bpm/60);
 	rate = bpm/bpmsource*BufRateScale.kr(bufnum);
-	rate = rate*Lag.kr(TChoose.kr(tempotrigger,[1,1,1,1,1,-1]),60/bpm*TChoose.kr(Dust.kr(1),[0,0,0,1,2,4]));
+	//rate = rate*Lag.kr(TChoose.kr(tempotrigger,[1,1,1,1,1,-1]),60/bpm*TChoose.kr(Dust.kr(1),[0,0,0,1,2,4]));
 	playbuf=PlayBuf.ar(2,bufnum,rate,Impulse.kr(bpm/60/8),TChoose.kr(tempotrigger,(0..16)/16)*BufFrames.kr(bufnum),loop:1);
 	snd=Breakcore.ar(bufnumtemp,playbuf,
 		capturetrigger:Impulse.kr(bpm/60*TChoose.kr(tempotrigger,0.125*(1..32))),

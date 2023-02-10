@@ -1,6 +1,6 @@
 (
 s.waitForBoot({
-	SynthDef("jp",{ | amp=0.75,note=40, mix=0.9, detune = 0.3,lpf=10 |
+	SynthDef("jp2",{ | amp=0.75,note=40, mix=0.9, detune = 0.3,lpf=10 |
 		var freq=note.midicps;
 		var detuneCurve = { |x|
 			(10028.7312891634*x.pow(11)) -
@@ -39,12 +39,12 @@ s.waitForBoot({
 		sig = HPF.ar(sig ! 2, freq);
 		sig = MoogLadder.ar(sig,freq*lpf*4);
 		sig = Pan2.ar(sig);
-		Out.ar(0,sig/7*EnvGen.ar(Env.perc(2,Rand(2,5),1,[4,-4]),doneAction:2)*amp);
+		Out.ar(0,sig/7*EnvGen.ar(Env.perc(Rand(0.2,2),Rand(1,3),1,[4,-4]),timeScale:4,doneAction:2)*amp);
 	}).send(s);
 	SynthDef("sine",{
 		arg note;
 		var snd=Pulse.ar([note-Rand(0,0.05),note+Rand(0,0.05)].midicps,SinOsc.kr(Rand(1,3),Rand(0,pi)).range(0.3,0.7));
-		var env=EnvGen.ar(Env.perc(1,3,1,[4,-4]),timeScale:2,doneAction:2);
+		var env=EnvGen.ar(Env.perc(Rand(0.5,1.5),Rand(2,4),1,[4,-4]),timeScale:8,doneAction:2);
 		snd=snd+PinkNoise.ar(SinOsc.kr(1/Rand(1,4),Rand(0,pi)).range(0.0,1.5));
 		snd=snd*env/20;
 		snd=RLPF.ar(snd,note.midicps*6,0.8);
@@ -62,9 +62,9 @@ s.waitForBoot({
 		snd2 = snd2 + PitchShift.ar(snd, 0.1, 8,0,1,0.125*shimmer/2);
 		snd2=SelectX.ar(0.8,[snd2,Fverb.ar(snd2[0],snd2[1],100,decay:VarLag.kr(LFNoise0.kr(1/3),3).range(50,100))]);
 		snd2=AnalogTape.ar(snd2,0.9,0.9,0.7);
-		snd2=SelectX.ar(SinOsc.kr(1/11).range(0,1),[snd2,AnalogChew.ar(snd2,VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0.01,1),Trig.kr(Dust.kr(0.5),LFNoise0.kr(1).range(0.5,1.8)),VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0,1))]);
-		snd2=AnalogDegrade.ar(snd2,Trig.kr(Dust.kr(0.5),LFNoise0.kr(1).range(0.1,0.3)),Trig.kr(Dust.kr(0.5),LFNoise0.kr(1).range(0.1,0.3)),VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0.01,1),VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0.01,1));
-		snd2=AnalogLoss.ar(snd2,VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0,1),VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0,1),VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0.01,1),VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0.01,1));
+		// snd2=SelectX.ar(SinOsc.kr(1/11).range(0,1),[snd2,AnalogChew.ar(snd2,VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0.01,1),Trig.kr(Dust.kr(0.5),LFNoise0.kr(1).range(0.5,1.8)),VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0,1))]);
+		// snd2=AnalogDegrade.ar(snd2,Trig.kr(Dust.kr(0.5),LFNoise0.kr(1).range(0.1,0.3)),Trig.kr(Dust.kr(0.5),LFNoise0.kr(1).range(0.1,0.3)),VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0.01,1),VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0.01,1));
+		// snd2=AnalogLoss.ar(snd2,VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0,1),VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0,1),VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0.01,1),VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0.01,1));
 		snd2=snd2.tanh*0.7;
 		snd2=HPF.ar(snd2,50);
 		snd2=BPeakEQ.ar(snd2,24.midicps,1,3);
@@ -105,14 +105,14 @@ s.waitForBoot({
 						if (i>0,{
 							spaces[i]=spaces[i]+spaces[i-1];
 						},{
-							Synth.head(s,"jp",[\note,scale[spaces[i]].mod(12)+24]);
+							Synth.head(s,"jp2",[\note,scale[spaces[i]].mod(12)+24]);
 
 						});
 						Synth.head(s,"sine",[\note,scale[spaces[i]]+48]);
 						// [i,v,spaces[i]].postln;
 					});
 				});
-				(2*(1.5+(0.25*7.rand))).sleep;
+				(4*(1.5+(0.25*7.rand))).sleep;
 			});
 		}.play;
 	}.play;

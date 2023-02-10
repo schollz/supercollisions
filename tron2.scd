@@ -2,6 +2,7 @@
 (
 // s.record;
 s.waitForBoot({
+	s.record;
 	Routine{
 		// set the bpm
 		var bpm=100;
@@ -58,7 +59,7 @@ s.waitForBoot({
 			snd=SelectX.ar(0.16,[snd,sndR]);
 			snd=AnalogTape.ar(snd,0.9,0.9,0.7,2);
 			snd=BPeakEQ.ar(snd,32.midicps,6);
-			ReplaceOut.ar(0,snd);
+			ReplaceOut.ar(0,snd*0.25);
 		}).send(s);
 		s.sync;
 		Synth.new("final",[],s,\addToTail);
@@ -87,9 +88,9 @@ s.waitForBoot({
 		syncopation=[1,0.5,1,0.5,0.5,1,0.5,1];
 		syncopation=[1];
 		t.schedAbs(0, { arg i, sec;
-			var note=scale[notes[i.mod(notes.size)].mod(scale.size)]+octaves[i.mod(octaves.size)]+32;
+			var note=scale[notes[i.mod(notes.size)].mod(scale.size)]+octaves[i.mod(octaves.size)]+36;
 			var accent=syncopation[i.mod(syncopation.size)];
-			[i,note-32,notes[i.mod(notes.size)],scale[notes[i.mod(notes.size)]]].postln;
+			[i,note-36,notes[i.mod(notes.size)],scale[notes[i.mod(notes.size)]]].postln;
 			Synth("jp",[\freq,note.midicps,\mix,(90+10.rand)/100,\detune,(25+30.rand)/100,\amp,accent,\lpf,18-(accent*12)]);
 			1
 		});
