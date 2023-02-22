@@ -8,11 +8,11 @@ s.waitForBoot({
         var windowFrames=(s.sampleRate*windowSeconds).round;
         var playRate=BufRateScale.ir(buf);
         var phase = Phasor.ar(
-			rate: playRate/EnvGen.kr(Env.new([Rand(6,8),Rand(8,12)],[Rand(2,8)]),timeScale:1),
-            start:pos.poll*frames,
+			rate: playRate/MouseY.kr(1,16),
+            start:pos*frames,
             end:48000000,
         );
-		windowFrames=EnvGen.kr(Env.new([Rand(0.2,0.8),Rand(0.5,2),Rand(0.05,0.1),Rand(2,5),Rand(0.02,0.05)],[Rand(0.05,0.3),Rand(1,3),Rand(0.5,2),Rand(1,3)]),timeScale:1)*windowFrames;
+		windowFrames=(MouseX.kr(0.0005,4)*windowFrames).poll;
         windowTrig=LocalIn.ar(1);
         windowStart=Gate.ar(phase,windowTrig);
         windowSelect=ToggleFF.ar(windowTrig);
@@ -30,7 +30,7 @@ s.waitForBoot({
             end: 48000000,
             resetPos: phase,
         );
-        window=Select.ar(windowSelect,[window1,window2]);
+        window=Select.ar(windowSelect,[window1,window2]).poll;
 		LocalOut.ar(
 			((playRate>0)*(window>(windowStart+windowFrames)))+
 			((playRate<0)*(window<(windowStart-windowFrames)))
@@ -38,10 +38,11 @@ s.waitForBoot({
 		snd1=BufRd.ar(2,buf,window1.mod(frames),1,4);
 		snd2=BufRd.ar(2,buf,window2.mod(frames),1,4);
         snd=SelectX.ar(Lag.ar(windowSelect,xfade),[snd1,snd2]);
+		snd=LPF.ar(snd,2000);
         Out.ar(0,snd);
     }).send(s);
     s.sync;
-    b=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/amenbreak_bpm136.wav");
+    b=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/mahler2.wav");
     s.sync;
     Synth("stretch",[\buf,b]);
 });

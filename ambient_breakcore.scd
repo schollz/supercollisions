@@ -4,7 +4,7 @@
 SynthDef(\main, {
 	var in1=In.ar(\in1.kr(1),2); // drums
 	var in2=In.ar(\in2.kr(1),2); // pad
-	var snd=Compander.ar(in2,in1*8,0.1,1,0.1,0.01,0.01)+(in1*MouseX.kr());
+	var snd=Compander.ar(in2,in1*16,0.1,1,0.1,0.01,0.01)+(in1*2);
 	snd=Compander.ar(snd,snd,4,1,0.5,0.01,0.01);
 	snd=LeakDC.ar(snd);
 	Out.ar(\out.kr(0),snd);
@@ -58,11 +58,12 @@ SynthDef(\padFx, {
 	ReplaceOut.ar(\out.kr(0), snd * 6.dbamp);
 }).add;
 
-SynthDef(\slice,{
+SynthDef(\slice2,{
+	arg buf,slice=0,slices=16,rate=1;
 	var snd;
-	snd = PlayBuf.ar(2,\buf.kr(0),BufRateScale.kr(\buf.kr(0)) * \rate.kr(1),
-		startPos: BufFrames.kr(\buf.kr(0)) * \slice.kr(0) / \slices.kr(16));
-	snd = snd * Env.linen(0, BufDur.kr(\buf.kr(0)) / \slices.kr(16), 0.01).ar;
+	snd = PlayBuf.ar(2,buf,BufRateScale.ir(buf) * rate,
+		startPos: (BufFrames.ir(buf) * slice / slices).poll);
+	snd = snd * Env.linen(0, BufDur.kr(\buf.kr(0)) / \slices.ar(16), 0.01).ar;
 	snd = snd * Env.asr(0.001, 1, 0.001).ar(Done.freeSelf, \gate.kr(1) * (1-TDelay.kr(Impulse.kr(0),\duration.kr(100000))) );
 	snd = snd * -6.dbamp ! 2;
 	snd = snd * EnvGen.ar(Env.new([1-\rampup.kr(0),1],[\duration.kr(100000)]),\rampup.kr(0));
@@ -169,7 +170,7 @@ h decimate=99
 
 (
 ~track1="
-0 repeat=2 decimate=0 stretch=0
+0 repeat=2 decimate=0 stretch=0 gate=100
 0 repeat=4
 0
 1
@@ -207,6 +208,34 @@ h
 0 repeat=6
 0 repeat=8
 0
+";
+)
+
+
+(
+~track1="
+3 repeat=3 stretch=4 gate=100
+"
+)
+
+(
+~track1="
+0 repeat=1 stretch=0 gate=100
+1
+2
+3
+4
+5
+6
+7 repeat=1
+8 repeat=1
+9 repeat=1
+a repeat=1
+b
+c
+d
+e
+f
 ";
 )
 
@@ -359,7 +388,7 @@ f repeat=8 pitch=4
 (
 Buffer.read(Server.default, thisProcess.nowExecutingPath.dirname++"/shs_roam_breaks_loop_120_surge_full_key_bpm120_beats32_.flac", action: {arg buf;
 	~bpm_source=120;
-	~buffer=buf;
+	// ~buffer=buf;
 	~slices=(buf.duration/(60/~bpm_source));
 });
 );
@@ -369,6 +398,13 @@ Buffer.read(Server.default, thisProcess.nowExecutingPath.dirname++"/amenbreak_bp
 	~bpm_source=136;
 	~buffer=buf;
 	~slices=(buf.duration/(60/~bpm_source));
+});
+);
+(
+Buffer.read(Server.default, thisProcess.nowExecutingPath.dirname++"/beats16_bpm150_Ultimate_Jack_Loops_014__BPM_150_.wav", action: {arg buf;
+	~bpm_source=150;
+	~buffer=buf;
+	~slices=(buf.duration/(60/~bpm_source))*2;
 });
 );
 
@@ -387,7 +423,7 @@ Routine {
 	var bus1 = Bus.audio(s,2);
 	var bus2 = Bus.audio(s,2);
 	var synMain = Synth.new(\main,[\in1,bus1,\in2,bus2]);
-	var bpmMain=136;
+	var bpmMain=180;
 	s.sync;
 	s.record;
 
@@ -472,7 +508,7 @@ Routine {
 									NodeWatcher.register(synth);
 								},
 								{
-									var synthName = \slice;
+									var synthName = \slice2;
 									if (stretch > 0) {
 										synthName = \sliceStretch;
 									};
@@ -480,7 +516,7 @@ Routine {
 										out: busFx,
 										buf: ~buffer,
 										slices: ~slices,
-										slice: "0123456789abcdef".indexOf(parts[0][0])%~slices,
+										slice: ("0123456789abcdef".indexOf(parts[0][0])%~slices).postln,
 										rate: bpm / ~bpm_source * pitch.midiratio,
 										stretch: stretch,
 										pan: rrand(-0.3,0.3),

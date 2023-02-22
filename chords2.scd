@@ -91,7 +91,7 @@ s.waitForBoot({
 					// seeds=[ 81, 29, 24, 23 ]; // THIS IS A NICE SEED!
 					// seeds=[ 5, 94, 91, 73 ];
 					// seeds=[ 37, 60, 71, 92 ];
-					//seeds=[ 39, 96, 21, 71 ];
+					// seeds=[ 39, 96, 21, 71 ];
 				});
 				thisThread.randSeed = seeds[j.mod(seeds.size)];
 				if (10.rand<10,{
@@ -101,6 +101,7 @@ s.waitForBoot({
 					spaces[1]=hm[0];
 					spaces[2]=hm[1];
 					spaces[3]=hm[2];
+					spaces.postln;
 					spaces.do({arg v,i;
 						if (i>0,{
 							spaces[i]=spaces[i]+spaces[i-1];

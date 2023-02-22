@@ -2,10 +2,10 @@
 (
 // s.record;
 s.waitForBoot({
-	s.record;
 	Routine{
 		// set the bpm
-		var bpm=100;
+		var lastnote=false;
+		var bpm=110;
 		var scale=Scale.major;
 		var octaves;
 		var notes;
@@ -51,24 +51,38 @@ s.waitForBoot({
 			sig = HPF.ar(sig ! 2, freq);
 			sig = MoogLadder.ar(sig,freq*lpf*3);
 			sig = Pan2.ar(sig);
-			Out.ar(0,sig/7*EnvGen.ar(Env.perc(0.0,1.2*amp),doneAction:2)*amp);
+			Out.ar(0,sig/5*EnvGen.ar(Env.perc(0.0,1.5*amp),doneAction:2)*amp);
 		}).send(s);
 		SynthDef("final",{
+			var snd2;
+			var shimmer=1;
 			var snd=In.ar(0,2);
-			var sndR = Fverb.ar(snd[0],snd[1],200,decay:80);
-			snd=SelectX.ar(0.16,[snd,sndR]);
+			var sndR = Fverb.ar(snd[0],snd[1],200,decay:LFNoise2.kr(1/2).range(60,90));
+			snd=SelectX.ar(LFNoise2.kr(1/3).range(0.0,0.001),[snd,sndR]);
 			snd=AnalogTape.ar(snd,0.9,0.9,0.7,2);
 			snd=BPeakEQ.ar(snd,32.midicps,6);
 			ReplaceOut.ar(0,snd*0.25);
+		}).send(s);
+
+		SynthDef("sine",{
+			arg note,gate=1,amp=0.5;
+			var snd=Pulse.ar(([note-Rand(0,0.03),note+Rand(0,0.03)]+SinOsc.kr(Rand(0.1,1),0,Rand(0.001,0.002))).midicps,SinOsc.kr(Rand(1,3),Rand(0,pi)).range(0.25,0.7));
+			var env=EnvGen.ar(Env.perc(Rand(0.1,0.5),Rand(2,4),1,[4,-4]),timeScale:2,doneAction:2);
+			snd=snd*env/10;
+			snd=RLPF.ar(snd,note.midicps*4,0.8);
+			snd=snd*EnvGen.ar(Env.adsr(sustainLevel:1,releaseTime:Rand(5,10)),gate:gate,doneAction:2);
+			snd=Balance2.ar(snd[0],snd[1],Rand(-0.2,0.2));
+			Out.ar(0,snd*amp);
 		}).send(s);
 		s.sync;
 		Synth.new("final",[],s,\addToTail);
 		s.sync;
 
-		// notes=[0,2,4,0,2,4,0,2,0,2,4,0,2,4,0,2];
-		// notes=notes++[-1,2,4,-1,2,4,-2,2,-1,2,4,-1,2,4,-1,2];
-		// notes=notes++[-2,0,4,-2,0,4,-1,0,-2,0,4,-2,0,4,-2,];
-		// notes=notes++[-2,0,3,-2,0,3,-2,2,-2,0,3,-2,0,3,-2,0];
+		notes=[0,2,4,0,2,4,0,2,0,2,4,0,2,4,0,2];
+		notes=notes++[-1,2,4,-1,2,4,-2,2,-1,2,4,-1,2,4,-1,2];
+		notes=notes++[-2,0,4,-2,0,4,-2,0,-2,0,4,-2,0,4,-2,0];
+		notes=notes++[-2,0,3,-2,0,3,-2,2,-2,0,3,-2,0,3,-2,0];
+		notes=notes++[5];
 		//
 		// notes=[0,3,7,5,0,3,7,5,0,3,7,5,0,3,7,5];
 		// notes=[7,3,0,7,3,0,7,3,7,3,0,7,3,0,7,3];
@@ -84,14 +98,29 @@ s.waitForBoot({
 		notes=notes++[-3,-1,1,-3,-1,1,-3,-1,-3,-1,1,-3,-1,1,-3,-1];
 		notes=notes++[3]; // 65th note is key
 		scale=[0,2,4,5,7,9,11];
+		octaves=[12,0,12,12,12,0,12,0];
 		octaves=[0,0,0,12,12,12,24,24];
 		syncopation=[1,0.5,1,0.5,0.5,1,0.5,1];
-		syncopation=[1];
+		syncopation=[1,1.5,0.2,0.5,0.5,1,0.5,1];
+		syncopation=[1,1.1,0.9];
+		lastnote=false;
 		t.schedAbs(0, { arg i, sec;
 			var note=scale[notes[i.mod(notes.size)].mod(scale.size)]+octaves[i.mod(octaves.size)]+36;
 			var accent=syncopation[i.mod(syncopation.size)];
 			[i,note-36,notes[i.mod(notes.size)],scale[notes[i.mod(notes.size)]]].postln;
-			Synth("jp",[\freq,note.midicps,\mix,(90+10.rand)/100,\detune,(25+30.rand)/100,\amp,accent,\lpf,18-(accent*12)]);
+			if (i.mod(16)<1,{
+				"play chords".postln;
+				4.do({arg j;
+					var note2=scale[notes[(i+j).mod(notes.size)].mod(scale.size)]+octaves[(i+j).mod(octaves.size)]+36;
+					Synth("sine",[\note,note2+12,\amp,1.4]);
+				});
+			});
+			if ((100.rand<100)||(lastnote==false),{
+				lastnote=true;
+				Synth("jp",[\freq,note.midicps,\mix,(40+10.rand)/100,\detune,(25+30.rand)/100,\amp,accent,\lpf,18-(accent*12)]);
+				},{
+					lastnote=false;
+			});
 			1
 		});
 

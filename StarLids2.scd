@@ -4,12 +4,12 @@
 // s.record;
 b=Buffer.alloc(s,s.sampleRate*120,2);
 {
-	arg hz=150,amp=1;
+	arg hz=550,amp=1;
 	var snd,fx;
 	var snd2,pos,pos2;
 	// convert hertz into midi notes
 	var note=hz.cpsmidi;
-	note = Lag.kr(Demand.kr(Dust.kr(1/3)+Impulse.kr(0),0,Dseq([50,50,50,50,50,50,50-7,50-7,50-7,50-7,50+5,50+5,50+5,50+5,50+5,50+5,50+5,50+5,50+5,50+5,50+5],inf)),0.1)-15;
+	note = Lag.kr(Demand.kr(Dust.kr(1/3)+Impulse.kr(0),0,Dseq([50,50,50,50,50,50,50-7,50-7,50-7,50-7,50+5,50+5,50+5,50+5,50+5,50+5,50+5,50+5,50+5,50+5,50+5],inf)),0.1)+0;
 	// PWM suboscillator
 	snd=Pan2.ar(Pulse.ar((note-12).midicps,LinLin.kr(LFTri.kr(0.5),-1,1,0.2,0.8))/12*amp);
 	// mix in 12 other oscillators (#12 is arbitary)
@@ -40,7 +40,7 @@ b=Buffer.alloc(s,s.sampleRate*120,2);
 	snd=snd*VarLag.kr(LFNoise0.kr(4),1/4,warp:\sine).range(1,1.2);
 	snd=AnalogTape.ar(snd,0.9,0.9,1.1,oversample:4);
 	snd=snd+(0.1*AnalogVintageDistortion.ar(snd,0.01,0.5,oversample:2));
-	snd=AnalogChew.ar(snd,VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0,1),Trig.kr(Dust.kr(0.5),LFNoise0.kr(1).range(0.5,1.8)),VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0,1));
+	snd=SelectX.ar(MouseX.kr(),[snd,AnalogChew.ar(snd,VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0,1),Trig.kr(Dust.kr(0.5),LFNoise0.kr(1).range(0.5,1.8)),VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0,1))]);
 	snd=AnalogDegrade.ar(snd,Trig.kr(Dust.kr(0.5),LFNoise0.kr(1).range(0.1,0.3)),Trig.kr(Dust.kr(0.5),LFNoise0.kr(1).range(0.1,0.3)),VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0,1),VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0,1));
 	snd=AnalogLoss.ar(snd,VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0,1),VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0,1),VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0,1),VarLag.kr(LFNoise0.kr(1),1,warp:\sine).range(0,1));
 	// snd=snd.tanh*0.7;
