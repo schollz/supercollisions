@@ -25,27 +25,43 @@ Barcode2 {
 		}).send(server);
 
 		SynthDef("looper",{
-			arg buf,baseRate=1.0,amp=1.0;
+			arg buf,tape,player,baseRate=1.0,amp=1.0;
+			var volume;
 			var switch=0,snd,snd1,snd2,pos,pos1,pos2,posStart,posEnd,index;
 			var frames=BufFrames.ir(buf);
-			var lfoStart=SinOsc.kr(1/Rand(10,30),Rand(hi:2*pi)).range(1024,frames-1024);
-            var lfoWindow=SinOsc.kr(1/Rand(10,30),Rand(hi:2*pi)).range(1024,88000);
+			var duration=BufDur.ir(buf);
+			var lfoStart=SinOsc.kr(1/Rand(10*duration,20*duration),Rand(hi:2*pi)).range(1024,frames-10240);
+			var lfoWindow=SinOsc.kr(1/Rand(60,120),Rand(hi:2*pi)).range(4096,frames/2);
 			var lfoRate=baseRate;//*Select.kr(SinOsc.kr(1/Rand(10,30)).range(0,4.9),[1,0.25,0.5,1,2]);
-			var lfoDirection=Demand.kr(Impulse.kr(1/Rand(10,30)),0,Drand([1.neg,1],inf));
-			var lfoAmp=SinOsc.kr(1/Rand(10,30),Rand(hi:2*pi)).range(0,1);
+			var lfoForward=Demand.kr(Impulse.kr(1/Rand(5,15)),0,Drand([0,1],inf));
+			var lfoAmp=SinOsc.kr(1/Rand(10,30),Rand(hi:2*pi)).range(0.05,0.5);
 			var lfoPan=SinOsc.kr(1/Rand(10,30),Rand(hi:2*pi)).range(-1,1);
-			var rate=Lag.ar(lfoRate*lfoDirection,1);
+			var rate=Lag.kr(lfoRate*(2*lfoForward-1),1);
 
-            posStart = lfoStart;
-            posEnd = posStart + lfoWindow;
-            if (posEnd>frames,{
-                posEnd = frames - 1024;
-            });
-			pos1=Phasor.ar(1,BufRateScale.ir(buf)*rate.poll,start:posStart,end:posEnd,resetPos:posStart);
+			// modulate the start/stop
+			posStart = (lfoStart);
+			// posStart=0.1*frames;
+			posEnd = Clip.kr(posStart + lfoWindow,0,frames-1024);
+			// posEnd=0.2*frames;
+
+			switch=ToggleFF.kr(LocalIn.kr(1));
+			pos1=Phasor.ar(1-switch,BufRateScale.ir(buf)*rate,end:frames,resetPos:((lfoForward>0)*posStart)+((lfoForward<1)*posEnd));
+			pos2=Phasor.ar(switch,BufRateScale.ir(buf)*rate,end:frames,resetPos:((lfoForward>0)*posStart)+((lfoForward<1)*posEnd));
 			snd1=BufRd.ar(2,buf,pos1,1.0,4);
-            snd=snd1;
+			snd2=BufRd.ar(2,buf,pos2,1.0,4);
+			pos=Select.ar(switch,[pos1,pos2]);
+			[pos,posStart,posEnd];
+			LocalOut.kr(
+				Changed.kr(Stepper.kr(Impulse.kr(50),max:1000000000,
+					step:(pos>posEnd)+(pos<posStart)
+				))
+			);
+			snd=SelectX.ar(Lag.kr(switch,0.05),[snd1,snd2]);
+			volume = amp*lfoAmp*EnvGen.ar(Env.new([0,1],[Rand(1,10)],4));
+			SendReply.kr(Impulse.kr(10),"/position",[player,posStart/frames,posEnd/frames,pos/frames,volume]);
+
 			snd=Balance2.ar(snd[0],snd[1],lfoPan);
-			Out.ar(0,snd*amp*lfoAmp*EnvGen.ar(Env.new([0,1],[1])));
+			Out.ar(0,snd*volume);
 		}).send(server);
 
 		server.sync;
@@ -63,7 +79,7 @@ Barcode2 {
 		});
 		("[barcode] playing tape"+tape+playid).postln;
 
-		syns.put(playid,Synth.head(server,"looper",[\buf,bufs.at(tapeid),\baseRate,baseRate,\amp,amp]).onFree({
+		syns.put(playid,Synth.head(server,"looper",[\tape,tape,\player,player,\buf,bufs.at(tapeid),\baseRate,baseRate,\amp,amp]).onFree({
 			("[barcode] player"+player+"finished.").postln;
 		}));
 		NodeWatcher.register(syns.at(playid));
