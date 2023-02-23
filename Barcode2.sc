@@ -33,25 +33,23 @@ Barcode2 {
 			arg buf,tape,player,baseRate=1.0,amp=1.0,timescale=1;
 			var volume;
 			var switch=0,snd,snd1,snd2,pos,pos1,pos2,posStart,posEnd,index;
-			var frames=BufFrames.ir(buf);
-			var duration=BufDur.ir(buf);
+			var frames=BufFrames.kr(buf);
+			var duration=BufDur.kr(buf);
 			var lfoStart=SinOsc.kr(timescale/Rand(10*duration,20*duration),Rand(hi:2*pi)).range(1024,frames-10240);
 			var lfoWindow=SinOsc.kr(timescale/Rand(60,120),Rand(hi:2*pi)).range(4096,frames/2);
 			var lfoRate=baseRate;//*Select.kr(SinOsc.kr(1/Rand(10,30)).range(0,4.9),[1,0.25,0.5,1,2]);
 			var lfoForward=Demand.kr(Impulse.kr(timescale/Rand(5,15)),0,Drand([0,1],inf));
 			var lfoAmp=SinOsc.kr(timescale/Rand(10,30),Rand(hi:2*pi)).range(0.05,0.5);
 			var lfoPan=SinOsc.kr(timescale/Rand(10,30),Rand(hi:2*pi)).range(-1,1);
-			var rate=Lag.kr(lfoRate*(2*lfoForward-1),1);
+			var rate=Lag.kr(lfoRate*(2*lfoForward-1),1)*BufRateScale.kr(buf);
 
 			// modulate the start/stop
-			posStart = (lfoStart);
-			// posStart=0.1*frames;
+			posStart = lfoStart;
 			posEnd = Clip.kr(posStart + lfoWindow,0,frames-1024);
-			// posEnd=0.2*frames;
 
 			switch=ToggleFF.kr(LocalIn.kr(1));
-			pos1=Phasor.ar(1-switch,BufRateScale.ir(buf)*rate,end:frames,resetPos:((lfoForward>0)*posStart)+((lfoForward<1)*posEnd));
-			pos2=Phasor.ar(switch,BufRateScale.ir(buf)*rate,end:frames,resetPos:((lfoForward>0)*posStart)+((lfoForward<1)*posEnd));
+			pos1=Phasor.ar(trig:1-switch,rate:rate,end:frames,resetPos:((lfoForward>0)*posStart)+((lfoForward<1)*posEnd));
+			pos2=Phasor.ar(trig:switch,  rate:rate,end:frames,resetPos:((lfoForward>0)*posStart)+((lfoForward<1)*posEnd));
 			snd1=BufRd.ar(2,buf,pos1,1.0,4);
 			snd2=BufRd.ar(2,buf,pos2,1.0,4);
 			pos=Select.ar(switch,[pos1,pos2]);
@@ -87,7 +85,8 @@ Barcode2 {
 	}
 
 	play {
-		arg tape=1,player=1,baseRate=1.0,amp=1.0,timescale=1;
+		arg tape=1,player=1,baseRate=1.0,db=0.0,timescale=1;
+		var amp=db.dbamp;
 		var tapeid="tape"++tape;
 		var playid="player"++player;
 		if (bufs.at(tapeid).isNil,{
