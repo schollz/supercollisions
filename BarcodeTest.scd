@@ -14,7 +14,7 @@ s.waitForBoot({
 		x=Synth.tail(s,"effects");
 
 		// load the barcode class
-		b=Barcode2.new(Server.default);
+		b=Barcode.new(Server.default);
 
 		// load a file into barcode
 		b.load(tape:1,filename:"/home/zns/Documents/supercollisions/kalimba.wav");
