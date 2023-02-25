@@ -3,8 +3,9 @@ Ube {
 	var server;
 	var bufs;
 	var oscs;
-	var syns;
+	var <syns;
 	var win;
+	var recording;
 	var windata;
 
 	*new {
@@ -22,6 +23,20 @@ Ube {
 		syns = Dictionary.new();
 		oscs = Dictionary.new();
 		windata = Array.newClear(128);
+		recording = false;
+
+
+		// effects
+		SynthDef("effects",{
+			arg amp=1.0;
+			var snd=In.ar(0,2);
+			var random_modulation={VarLag.kr(LFNoise0.kr(1/4),4,warp:\sine)}!2;
+			snd=HPF.ar(snd,120);
+			// Fverb is better, release coming soon
+			//snd=SelectX.ar(random_modulation[0].range(0.1,0.2),[snd,Fverb.ar(snd[0],snd[1],50,decay:random_modulation[1].range(70,90))]);
+			snd=SelectX.ar(random_modulation[0].range(0.1,0.2),[snd,FreeVerb2.ar(snd[0],snd[1],1,0.7,0.3)]);
+			ReplaceOut.ar(0,snd*Lag.kr(amp));
+		}).send(server);
 
 		// basic players
 		SynthDef("recorder",{
@@ -62,7 +77,7 @@ Ube {
 				))
 			);
 			snd=SelectX.ar(Lag.kr(switch,0.05),[snd1,snd2]);
-			volume = amp*lfoAmp*EnvGen.ar(Env.new([0,1],[Rand(1,10)],4))*MouseX.kr();
+			volume = amp*lfoAmp*EnvGen.ar(Env.new([0,1],[Rand(1,10)],4));
 			SendReply.kr(Impulse.kr(25),"/position",[tape,player,posStart/frames,posEnd/frames,pos/frames,volume,(lfoPan+1)/2]);
 
 			snd=Balance2.ar(snd[0],snd[1],lfoPan);
@@ -85,14 +100,17 @@ Ube {
 
 		server.sync;
 
+		syns.put("fx",Synth.tail(server,"effects"));
+
 		"done loading.".postln;
 	}
 
-	play {
+	playTape {
 		arg tape=1,player=1,rate=1.0,db=0.0,timescale=1;
 		var amp=db.dbamp;
 		var tapeid="tape"++tape;
-		var playid="player"++player;
+		var playid="player"++player++tapeid;
+
 		if (bufs.at(tapeid).isNil,{
 			("[ube] cannot play empty tape"+tape).postln;
 			^0
@@ -105,7 +123,7 @@ Ube {
 		NodeWatcher.register(syns.at(playid));
 	}
 
-	load {
+	loadTape {
 		arg tape=1,filename="";
 		var tapeid="tape"++tape;
 		if (filename=="",{
@@ -115,24 +133,40 @@ Ube {
 		bufs.put(tapeid,Buffer.read(server,filename,action:{ arg buf;
 			("[ube] loaded"+tape+filename).postln;
 		}));
+		server.sync;
 	}
 
-	record {
-		arg tape=1,seconds=30,recLevel=1.0,preLevel=1.0;
+	recordTape {
+		arg tape=1,seconds=30,recLevel=1.0;
 		var tapeid="tape"++tape;
-		if (bufs.at(tapeid).isNil,{
-			bufs.put(tapeid,Buffer.alloc(server,server.sampleRate*seconds,2));
-			server.sync;
-		});
-		("[ube] record"+tape+seconds+recLevel+preLevel).postln;
-		// TODO: silence all output to prevent feedback?
+		Buffer.alloc(server,server.sampleRate*seconds,2,{ arg buf;
+			// silence all output to prevent feedback?
+			syns.at("fx").set(\amp,0);
+			recording=true;
 
-		// initiate recorder
-		syns.put("record"++tape,Synth.head(server,"recorder",[\buf,bufs.at(tapeid),\recLevel,recLevel,\preLevel,preLevel]).onFree({
-			("[ube] record"+tape+"finished.").postln;
-			// TODO: load it as a tape
-		}));
-		NodeWatcher.register(syns.at("record"++tape));
+			// initiate recorder
+			("[ube] record"+buf.bufnum+tape+seconds+recLevel).postln;
+			syns.put("record"++tape,Synth.head(server,"recorder",[\buf,buf,\recLevel,recLevel,\preLevel,0]).onFree({
+				("[ube] recording to buf"+buf.bufnum+"finished.").postln;
+				// update the buffers in synths
+				syns.keysValuesDo({ arg k,v;
+					if (k.contains(tapeid),{
+						("[ube] updating"+k+"with buffer"+buf.bufnum).postln;
+						syns.at(k).set(\buf,buf);
+					});
+				});
+				// turn on the main fx again
+				syns.at("fx").set(\amp,1);
+				recording=false;
+				// update the buffer
+				if (bufs.at(tapeid).notNil,{
+					bufs.at(tapeid).free;
+				});
+				bufs.put(tapeid,buf);
+			}));
+			NodeWatcher.register(syns.at("record"++tape));
+
+		});
 
 	}
 
@@ -163,6 +197,9 @@ Ube {
 				x=(w.bounds.width-(2*padding));
 				availableHeight=((w.bounds.height-(padding*2))/num);
 				h=(availableHeight-spacing);
+				if (recording,{
+					debounce=10;
+				});
 				if (lastWidth!=w.bounds.width,{
 					debounce=10;
 				});
@@ -185,7 +222,6 @@ Ube {
 					if (tapeid.notNil,{
 						tapeid="tape1";
 						if (a.notNil,{
-							"close?".postln;
 							a.close;
 						});
 						a = SoundFileView.new(w, Rect(padding,padding, x, h));
@@ -249,25 +285,14 @@ Ube {
 			};
 		});
 
-		Routine {
-			inf.do({
-				0.04.wait;
-				if (w.notNil,{
-					if (w.isClosed.not,{
-						AppClock.sched(0,{w.refresh});
-					});
+		AppClock.sched(0,{
+			if (w.notNil,{
+				if (w.isClosed.not,{
+					w.refresh;
 				});
 			});
-		}.play;
-		// while(true,{
-		// 	if (w.notNil,{
-		// 		if (w.isClosed.not,{
-		// 			w.refresh;
-		// 		});
-		// 	});
-		// 	0.04.wait;
-		// }).fork(AppClock);
-
+			0.04
+		});
 
 	}
 
