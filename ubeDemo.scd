@@ -26,10 +26,13 @@ s.waitForBoot({
 
 		// play the tape with lots of players
 		{
-			var rates=[1.5,1,2,0.5,4,0.25,1];
-			var dbs=[0,0,-6,-8,-6,-6,-4];
+			var scale=Tuning.et12.ratios;
+			var rates=[1.5,1.25,2,0.5,4,0.25,1,0.125];
+			var dbs=[0,0,-6,-8,-6,-6,-4,0];
+			// var rates=[scale[0],scale[4],scale[7],4,0.25];
+			// var dbs=[0,0,0,0,6];
 			rates.do({ arg v,i;
-				b.play(tape:1,player:i,rate:rates[i],db:dbs[i],timescale:1.5);
+				b.play(tape:1,player:i,rate:rates[i],db:dbs[i],timescale:1.0);
 			});
 		}.play;
 
@@ -39,6 +42,7 @@ s.waitForBoot({
 	}.play;
 });
 )
+
 
 // can add more players still still
 b.play(tape:1,player:7,rate:1,db:1);
