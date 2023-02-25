@@ -6,7 +6,7 @@ s.waitForBoot({
 	u=Ube.new(Server.default);
 
 	// load a file
-	u.loadTape(tape:1,filename:thisProcess.nowExecutingPath.dirname++"/windchimes.wav");
+	u.loadTape(tape:1,filename:thisProcess.nowExecutingPath.dirname++"/kalimba.wav");
 
 	// play the tape with lots of players
 	pairs=[
