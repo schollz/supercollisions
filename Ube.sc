@@ -35,6 +35,8 @@ Ube {
 			var switch=0,snd,snd1,snd2,pos,pos1,pos2,posStart,posEnd,index;
 			var frames=BufFrames.kr(buf);
 			var duration=BufDur.kr(buf);
+			// var lfoStart=VarLag.kr(LFNoise0.kr(1/10),10,warp:\sine).range(1024,frames-10240);
+			// var lfoWindow=VarLag.kr(LFNoise0.kr(1/10),10,warp:\sine).range(4096,frames/2);
 			var lfoStart=SinOsc.kr(timescale/Rand(30,60),Rand(hi:2*pi)).range(1024,frames-10240);
 			var lfoWindow=SinOsc.kr(timescale/Rand(60,120),Rand(hi:2*pi)).range(4096,frames/2);
 			var lfoRate=baseRate;//*Select.kr(SinOsc.kr(1/Rand(10,30)).range(0,4.9),[1,0.25,0.5,1,2]);
@@ -60,7 +62,7 @@ Ube {
 				))
 			);
 			snd=SelectX.ar(Lag.kr(switch,0.05),[snd1,snd2]);
-			volume = amp*lfoAmp*EnvGen.ar(Env.new([0,1],[Rand(1,10)],4));
+			volume = amp*lfoAmp*EnvGen.ar(Env.new([0,1],[Rand(1,10)],4))*MouseX.kr();
 			SendReply.kr(Impulse.kr(25),"/position",[tape,player,posStart/frames,posEnd/frames,pos/frames,volume,(lfoPan+1)/2]);
 
 			snd=Balance2.ar(snd[0],snd[1],lfoPan);
@@ -188,15 +190,8 @@ Ube {
 						});
 						a = SoundFileView.new(w, Rect(padding,padding, x, h));
 						bufs.at(tapeid).loadToFloatArray(0, -1, {|floatArray|
-							AppClock.sched(1,{
+							AppClock.sched(0,{
 								a.setData(floatArray*1.5,4096,0,1,bufs.at(tapeid).sampleRate);
-								a.gridOn = false;
-								a.timeCursorOn = false;
-								a.drawsCenterLine  = false;
-								a.drawsBoundingLines = false;
-								a.peakColor=Color.new255(99,89,133,150);
-								a.rmsColor=Color.new255(99,89,133,60);
-								a.background_(Color.new255(236,242,255,0));
 								a.refresh;
 							});
 						});
@@ -207,8 +202,6 @@ Ube {
 						a.peakColor=Color.new255(99,89,133,150);
 						a.rmsColor=Color.new255(99,89,133,60);
 						a.background_(Color.new255(236,242,255,0));
-						// a.soundfile=snds.at(tapeid);
-						// a.read(0,snds.at(tapeid).numFrames);
 					});
 
 				},{
@@ -226,7 +219,7 @@ Ube {
 						var pos=v[3];
 						var volume=v[4];
 						var pan=v[5];
-						var volume01=volume.ampdb.linlin(-64,12,0,1)+0.05;
+						var volume01=volume.ampdb.linlin(-96,12,0,1)+0.001;
 						var cc=Color.new255(99,89,133,255*volume01);
 						// var cc=Color.new255(96,150,180,255*volume01);
 
