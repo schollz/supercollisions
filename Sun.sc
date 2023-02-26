@@ -45,8 +45,8 @@ Sun {
 		sectors.put("avg",[10,7,5,2]);
 		sectors.put("spread",[3,2,1,0.5]);
 		//sectors.put("num",[2,3,4,2]);
-	 sectors.put("num",[1,2,3,1]);
-		sectors.put("db",[0,-6,-9,-18]);
+	 	sectors.put("num",[1,2,3,1]);
+		sectors.put("db",[6,-6,-9,-18]);
 		sectors.postln;
 		windata = Array.newClear(128);
 		recording = false;
@@ -56,10 +56,11 @@ Sun {
 		SynthDef("effects",{
 			arg amp=1.0;
 			var snd=In.ar(0,2);
-			var random_modulation={LFNoise2.kr(1/4)}!2;
+			var random_modulation={LFNoise2.kr(1/4)}!4;
 			snd=HPF.ar(snd,30);
 			// Fverb is better, release coming soon
 			snd=AnalogTape.ar(snd,0.9,0.9,0.8,2);
+			// snd=SelectX.ar(LFNoise2.kr(1/5).range(0,1),[snd,AnalogVintageDistortion.ar(snd,0.1,0.1,oversample:2)]);
 			snd=SelectX.ar(random_modulation[0].range(0.1,0.5),[snd,Fverb.ar(snd[0],snd[1],50,decay:random_modulation[1].range(70,90))]);
 			ReplaceOut.ar(0,snd*Lag.kr(amp));
 		}).send(server);
@@ -70,24 +71,33 @@ Sun {
 			var snd = Silent.ar(2);
 			var pan = LFNoise2.kr(1/Rand(3,6)).range(-0.5,0.5);
 			var env = EnvGen.ar(Env.perc(attack,decay,amp,[4,4]),doneAction:2);
-			var detune = LFNoise2.kr(1/Rand(1,5)).range(0,0.1);
+			var detune = LFNoise2.kr(1/Rand(1,5)).range(-0.1,0.1);
 
+			// klank 
+			// note = note + detune;
+            // snd = snd + Klank.ar(`[[note.midicps,note.midicps*2,note.midicps*4,note.midicps*6],nil,[1,0.9,0.7,0.3]], PinkNoise.ar([0.05, 0.05]));
+           	// snd = HPF.ar(snd,note.midicps/2);
+           	// snd = LPF.ar(snd,note.midicps*8);
 
+           	// sine
 			// snd = snd + SinOsc.ar([note-detune,note+detune].midicps);
+
+			// pwm
 			snd = snd + PulseDPW.ar(
 				freq:[note-detune,note+detune].midicps,
 				width:SinOsc.kr(Rand(1,3),Rand(0,pi)).range(0.3,0.7)
 			);
-			snd = snd + SawDPW.ar(
-				freq:[note-detune,note+detune].midicps,
-			);
 
-			snd = snd.fold(Rand(-1,0),Rand(0,1));
+			// saw
+			// snd = snd + SawDPW.ar(
+			// 	freq:[note-detune,note+detune].midicps,
+			// );
 
-			snd = LockhartWavefolder.ar(snd[0] * LFNoise1.kr(1/4).range(1,10), 4) + ((LockhartWavefolder.ar(snd[1] * LFNoise1.kr(1/4).range(1,10), 4)) * [-1,1]);
-			snd = RLPF.ar(snd, LinExp.kr(LFNoise2.kr(1/4).range(0.01,1),0.01,1,200,4000),LFNoise2.kr(1/4).range(0.1,1));
-			// //
-			snd = AnalogVintageDistortion.ar(snd,0,1,0.1,0.1);
+			// snd = snd.fold(Rand(-1,0),Rand(0,1));
+
+			// snd = LockhartWavefolder.ar(snd[0] * LFNoise1.kr(1/4).range(1,10), 4) + ((LockhartWavefolder.ar(snd[1] * LFNoise1.kr(1/4).range(1,10), 4)) * [-1,1]);
+			// snd = RLPF.ar(snd, LinExp.kr(LFNoise2.kr(1/4).range(0.01,1),0.01,1,200,4000),LFNoise2.kr(1/4).range(0.1,1));
+			// snd = AnalogVintageDistortion.ar(snd,0,1,0.1,0.1);
 
 			snd = LeakDC.ar(snd);
 
@@ -96,17 +106,13 @@ Sun {
 				rq:LFNoise2.kr(1/4).range(0.1,1)
 			);
 
-
-
 			snd = Balance2.ar(snd[0],snd[1],pan);
-
-			SendReply.kr(Impulse.kr(25),"/position",[\sector.kr(0),note,env,pan,detune]);
-
+			SendReply.kr(Impulse.kr(25),"/sunposition",[\sector.kr(0),note,env,pan,detune.abs]);
 			Out.ar(out,snd*env/12);
 		}).send(server);
 
 
-		oscs.put("position",OSCFunc({ |msg|
+		oscs.put("sunposition",OSCFunc({ |msg|
 			var oscRoute=msg[0];
 			var synNum=msg[1];
 			var dunno=msg[2];
@@ -116,7 +122,7 @@ Sun {
 			var pan=msg[6];
 			var detune=msg[7];
 			windata.put(note,[sector,amplitude,pan,detune]);
-		}, '/position'));
+		}, '/sunposition'));
 
 		server.sync;
 
@@ -156,7 +162,7 @@ Sun {
 	}
 
 	gui {
-		arg height=800,width=1600,spacing=20,padding=20;
+		arg height=400,width=800,spacing=20,padding=20;
 		var w,a;
 		var lastHeight=height;
 		var lastWidth=width;
@@ -204,12 +210,10 @@ Sun {
 							Pen.joinStyle = 1;
 							Pen.capStyle = 1;
 							Pen.color = color;
+							Pen.width=detune.linlin(0,0.12,4,16)*(w.bounds.width*w.bounds.height)/(600*600);
 							Pen.line(point1,Point(w.bounds.width/2,w.bounds.height/2));
-							Pen.width=detune.linlin(0,0.12,4,16)*w.bounds.width/600;
 							Pen.fillStroke;
 
-
-							Pen.color = color;
 							Pen.moveTo(Point(w.bounds.width/2,w.bounds.height/2));
 							Pen.addArc(
 								Point(w.bounds.width/2,w.bounds.height/2),
@@ -217,7 +221,6 @@ Sun {
 								(2*pan)*2*pi,
 								note.linlin(32,72,0,200).mod(32)/32*2*pi+0.3,
 							);
-							Pen.width=(detune.linlin(0,0.12,6,12)*w.bounds.width/400).asInteger;
 							Pen.perform(fillOrStroke[note.mod(fillOrStroke.size)]);
 						});
 
