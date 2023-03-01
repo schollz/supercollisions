@@ -132,18 +132,6 @@ SynthDef("pulsetrain",{arg note=60,amp=1;
 }.plot(1/100*4);
 )
 
-// height matching
-(
-{
-	arg freq=100;
-	x={arg y;
-		var width=LinLin.kr(y,0.5,0.5.neg,0.09,0.13); // 0.11 is best, but 0.13 helps make a nice sine-like wave at the end, 0.09 at the beginning helps make the peaks standout
-		var height=LinLin.kr(y,0.5.neg,0.5,1,0.5);
-		1.neg*FOS.ar((height*LFGauss.ar(1/freq,width,0.5))+(1*LFGauss.ar(1/freq,width,y)),1,-1,0.995)
-	};
-	[x.value(0.5),x.value(0.25),x.value(0.0),x.value(-0.1),x.value(-0.2),x.value(-0.5)]
-}.plot(1/100*4);
-)
 
 
 
@@ -155,7 +143,7 @@ Synth.head(s,"pulsetrain",[\note,57]);
 Synth.head(s,"pulsetrain",[\note,67]);
 )
 
-Synth.head(s,"pulsetrain",[\note,60]);
+Synth.head(s,"pulsetrain",[\note,36]);
 
 (
 SynthDef("fx",{
@@ -171,13 +159,97 @@ SynthDef("pulsetrain",{
 	var x={arg y;
 		var width=LinLin.kr(y,0.5,0.5.neg,0.09,0.13); // 0.11 is best, but 0.13 helps make a nice sine-like wave at the end
 		var height=LinLin.kr(y,0.5.neg,0.5,1,0.5);
-		1.neg*FOS.ar((height*LFGauss.ar(1/freq,width,0.5))+(1*LFGauss.ar(1/freq,width,y)),1,-1,0.995)
+		(height*LFGauss.ar(1/freq,width,0.5))+(MouseY.kr()*LFGauss.ar(1/freq,width,y))
 	};
 	snd=x.value(MouseX.kr(-0.5,0.5));
-	snd=LPF.ar(snd,freq*MouseY.kr(1,8));
+	snd=LPF.ar(snd,freq*3);
 	snd=Pan2.ar(snd,0);
 	Out.ar(0,snd/10);
-}).play;
+}).add;
+)
+
+
+
+
+// square pulses
+(
+{
+	arg freq=100;
+	var	x={arg y;
+		var width=0.07;
+		var amp=LinLin.kr(y,0,0.4,1,2); // volume compensation
+		var height=LinLin.kr(y,0,0.4,2,1); // height compensation
+		var snd_=(DelayL.ar(LFPulse.ar(freq,0,width,0.5),1/freq,1/freq*y))+(LFPulse.ar(freq,0.05,width,height*0.5));
+		LPF.ar(LeakDC.ar(amp*snd_,0.995),Clip.kr(freq*2*XLine.kr(1.5,1,1),20,20000))*1.neg
+	};
+	[x.value(0.0),x.value(0.3)]
+}.plot(1/100*5);
+)
+
+s.stopRecording
+(
+s.waitForBoot({
+	Routine{
+
+		SynthDef("fx",{
+			var snd=In.ar(0,2);
+			snd=SelectX.ar(LFNoise2.kr(1/3).range(0.15,0.5), [snd,Fverb.ar(snd[0],snd[1],60,decay:LFNoise2.kr(1/4).range(70,90))]);
+			ReplaceOut.ar(0,snd);
+
+		}).add;
+		SynthDef("pulsetrain",{
+			arg note=60;
+			var freq=note.midicps;
+			var snd;
+			var	x={arg y;
+				var width=0.09; // trial and error
+				var amp=LinLin.kr(y,0,0.5,0.8,1.5); // volume compensation
+				var height=LinLin.kr(y,0,0.4,1.6,1); // height compensation
+				var base_height=0.5; // trial and error
+				var base_offset=0.05; // trial and error
+				var snd_=(DelayL.ar(LFPulse.ar(freq,0,width,base_height),1/freq,1/freq*y))+(LFPulse.ar(freq,base_offset,width,height*base_height));
+				LPF.ar(LeakDC.ar(amp*snd_,0.995),Clip.kr(freq*2.8*XLine.kr(4,1,0.6),20,20000))*1.neg
+			};
+			snd=x.value(Line.kr(0.0,0.35,3,doneAction:2))/2;
+			snd=(snd*Line.kr(1,1.4,0.6))+Saw.ar(freq,mul:Line.kr(0.21,0.0,0.15));
+			Out.ar(0,snd!2);
+		}).add;
+		s.sync;
+		s.record;
+		Synth("pulsetrain");
+		3.wait;
+		s.stopRecording;
+	}.play;
+})
+)
+
+
+(
+x=Synth.tail(s,"fx");
+)
+
+(
+Synth.head(s,"pulsetrain",[\note,60]);
+Synth.head(s,"pulsetrain",[\note,57]);
+Synth.head(s,"pulsetrain",[\note,67]);
+)
+
+(
+SynthDef("pulsetrain",{
+	arg note=60;
+	var freq=note.midicps;
+	var snd;
+	var x={arg y;
+		var width=0.15;
+		var height=LinLin.kr(y,0,0.5,2,1);
+		var snd_=DelayL.ar(LFPulse.ar(freq,0,width),1/freq,1/freq*y)+LFPulse.ar(freq,0,width,height);
+		snd_=LeakDC.ar(snd_,0.999)*1.neg
+	};
+	snd=x.value(MouseX.kr(0,0.5));
+	snd=LPF.ar(snd,freq*2);
+	snd=Pan2.ar(snd,0);
+	Out.ar(0,snd/2);
+}).add;
 )
 
 
