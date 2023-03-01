@@ -131,18 +131,6 @@ SynthDef("pulsetrain",{arg note=60,amp=1;
 	[x.value(0.5),x.value(0.0),x.value(-0.5)]
 }.plot(1/100*4);
 )
-// two square waves:
-(
-{
-	var freq=100;
-	var x={
-		arg g;
-		LPF.ar(LeakDC.ar(LFPulse.ar(freq,g,0.125,-1)+LFPulse.ar(freq,0,0.125,-1)),freq*3)
-	};
-	[x.value(0),x.value(0.1),x.value(0.2),x.value(0.25),x.value(0.4),x.value(0.5)]
-}.plot(4/100);
-)
-
 
 
 
