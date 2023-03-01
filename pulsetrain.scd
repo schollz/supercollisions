@@ -176,13 +176,17 @@ SynthDef("pulsetrain",{
 {
 	arg freq=100;
 	var	x={arg y;
-		var width=0.07;
-		var amp=LinLin.kr(y,0,0.4,1,2); // volume compensation
-		var height=LinLin.kr(y,0,0.4,2,1); // height compensation
-		var snd_=(DelayL.ar(LFPulse.ar(freq,0,width,0.5),1/freq,1/freq*y))+(LFPulse.ar(freq,0.05,width,height*0.5));
-		LPF.ar(LeakDC.ar(amp*snd_,0.995),Clip.kr(freq*2*XLine.kr(1.5,1,1),20,20000))*1.neg
-	};
-	[x.value(0.0),x.value(0.3)]
+				var width=0.125; // trial and error
+				var amp=LinLin.kr(y,0,0.5,1,1); // volume compensation
+				var height=LinLin.kr(y,0,0.5,1.6,1); // height compensation
+				var base_height=0.5; // trial and error
+				var base_offset=0.0; // trial and error
+				//var snd_=(DelayL.ar(LFPulse.ar(freq,0,width,base_height),1/freq,1/freq*y))+(LFPulse.ar(freq,base_offset,width,height*base_height));
+				var snd_=(base_height*LFGauss.ar(1/freq,width,0.5))+(base_height*height*LFGauss.ar(1/freq,width,(y*2-0.5)*1.neg));
+				snd_=LeakDC.ar(snd_,0.995)+DelayN.ar(Saw.ar(freq,0.05),1/freq,0.90/freq,1.neg);
+				snd_=LPF.ar(amp*snd_,Clip.kr(freq*3.5*XLine.kr(4,1,0.6),20,20000))*1.neg
+			};
+	[x.value(0.0.neg),x.value(0.5),DelayN.ar(Saw.ar(freq),1/freq,0.925/freq)]
 }.plot(1/100*5);
 )
 
@@ -198,19 +202,35 @@ s.waitForBoot({
 
 		}).add;
 		SynthDef("pulsetrain",{
-			arg note=60;
+			arg note=72,modh=0;
 			var freq=note.midicps;
 			var snd;
-			var	x={arg y;
-				var width=0.09; // trial and error
-				var amp=LinLin.kr(y,0,0.5,0.8,1.5); // volume compensation
-				var height=LinLin.kr(y,0,0.4,1.6,1); // height compensation
-				var base_height=0.5; // trial and error
-				var base_offset=0.05; // trial and error
-				var snd_=(DelayL.ar(LFPulse.ar(freq,0,width,base_height),1/freq,1/freq*y))+(LFPulse.ar(freq,base_offset,width,height*base_height));
-				LPF.ar(LeakDC.ar(amp*snd_,0.995),Clip.kr(freq*2.8*XLine.kr(4,1,0.6),20,20000))*1.neg
+			var	x={arg y,mod=0;
+				var width=0.15; // trial and error
+				var amp=LinLin.kr(y,0,0.5,0.5,1); // volume compensation
+				var saw=LinLin.kr(y,0.0,0.5,0.25,0.0);
+				var crossover=0.25;
+				var height1=Select.kr(y>crossover,[
+					LinLin.kr(y,0,crossover,0.5,1.1),
+					LinLin.kr(y,crossover,0.5,1.1,1)
+				]);
+				var height2=SinOsc.kr(mod).linlin(0,1,1,SinOsc.kr(mod/2).range(0,0.5));
+				//var height1=LinLin.kr(y,0,0.5,1.5,1);
+				var base_height=LinLin.kr(y,0.0,0.5,0.5,0.5); // trial and error
+				var onepole=LinExp.kr(y,0,0.5,0.96,0.995);
+				var base_offset=0.0; // trial and error
+				//var snd_=(DelayL.ar(LFPulse.ar(freq,0,width,base_height),1/freq,1/freq*y))+(LFPulse.ar(freq,base_offset,width,height1*base_height));
+				var snd_=(base_height*height2*LFGauss.ar(1/freq,width,0.5+base_offset))+(base_height*height1*LFGauss.ar(1/freq,width,(y*2-0.5)*1.neg));
+				//snd_=LeakDC.ar(snd_,onepole);//+DelayN.ar(Saw.ar(freq,saw),1/freq,0.91/freq,1.neg);
+				// higher HPF cutoff creates more
+				// sloping in the initial segment of the curve
+				snd_=BHiPass.ar(snd_,freq/8,0.707);
+				snd_=LeakDC.ar(snd_,0.99); // more DC offset fix
+				snd_=snd_*1.neg
+				//snd_=LPF.ar(amp*snd_,Clip.kr(freq*1*XLine.kr(4,1,0.6),20,20000))
 			};
-			snd=x.value(Line.kr(0.0,0.35,3,doneAction:2))/2;
+			//snd=x.value(SinOsc.kr(freq/8).range(0,0.5),freq/13)/2;
+			snd=x.value(Line.kr(0.0,0.5,3,doneAction:2),0)/2;
 			snd=(snd*Line.kr(1,1.4,0.6))+Saw.ar(freq,mul:Line.kr(0.21,0.0,0.15));
 			Out.ar(0,snd!2);
 		}).add;
@@ -229,9 +249,9 @@ x=Synth.tail(s,"fx");
 )
 
 (
-Synth.head(s,"pulsetrain",[\note,60]);
-Synth.head(s,"pulsetrain",[\note,57]);
-Synth.head(s,"pulsetrain",[\note,67]);
+Synth.head(s,"pulsetrain",[\note,72,\modh,16]);
+Synth.head(s,"pulsetrain",[\note,57+12,\modh,8]);
+Synth.head(s,"pulsetrain",[\note,67+12,\modh,4]);
 )
 
 (
