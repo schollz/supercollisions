@@ -69,16 +69,115 @@ SynthDef("pulsetrain",{arg note=60,amp=1;
 }).add;
 )
 
-({Saw.ar(100,0.1,1)}.plot(0.1))
-(
-{
-	var freq=80;
-	var g=0.4;
-	[LFPulse.ar(freq,width:Select.kr(g>0.5,[1-g,g]),mul:Saw.ar(freq,0.1,1))+
-		DelayC.ar(LFPulse.ar(freq,width:0.25)*1.neg,1/freq,1/freq*g,2*1.4)+
-		DelayC.ar(LFPulse.ar(freq,width:0.25)*1.neg,1/freq,1/freq*0.75,1.8)]}.plot(0.05);
-)
+
 
 (
 {[LFPulse.ar(200,width:0.25)+DelayC.ar(LFPulse.ar(200,width:0.25)*1.neg,1/200,1/200*0.5)]}.play;
 )
+
+
+
+
+
+
+({
+	arg freq=20;
+	[LFGauss.ar(1/freq,1/freq*4,0.5),LFGauss.ar(1/freq,1/freq*4,0)]
+}.plot(0.2);
+)
+
+
+(
+{
+	arg freq=100;
+	[LFGauss.ar(1/freq,0.125,0.5),LFGauss.ar(1/freq,0.125,0.25.neg),LFGauss.ar(1/freq,0.125,0.5)+LFGauss.ar(1/freq,0.125,0.5.neg)]
+}.plot(1/100*4);
+)
+
+
+
+
+
+// attempt 1
+(
+{
+	var freq=100;
+	var x={
+		arg g;
+		LFPulse.ar(freq,width:Select.kr(g>0.5,[1-g,g]),mul:Saw.ar(freq,0.2,1))+
+		DelayC.ar(LFPulse.ar(freq,width:0.25)*1.neg,1/freq,1/freq*g,2*1.4)+
+		DelayC.ar(LFPulse.ar(freq,width:0.25)*1.neg,1/freq,1/freq*0.75,1.8)
+	};
+	[x.value(0.75),x.value(0.4),x.value(0.25)]}.plot(4/100);
+)
+
+// attempt 2
+(
+{
+	arg freq=100;
+	x={arg y;
+		var width=0.2;
+		1.neg*LeakDC.ar(LFGauss.ar(1/freq,width,0.5)+LFGauss.ar(1/freq,width,y),0.995)};
+	[x.value(0.5),x.value(0.0),x.value(-0.5)]
+}.plot(1/100*4);
+)
+// First Order Filter
+(
+{
+	arg freq=100;
+	x={arg y;
+		var width=0.2;
+		1.neg*FOS.ar(LFGauss.ar(1/freq,width,0.5)+LFGauss.ar(1/freq,width,y),1,-1,0.995)};
+	[x.value(0.5),x.value(0.0),x.value(-0.5)]
+}.plot(1/100*4);
+)
+
+// height matching
+(
+{
+	arg freq=100;
+	x={arg y;
+		var width=LinLin.kr(y,0.5,0.5.neg,0.09,0.13); // 0.11 is best, but 0.13 helps make a nice sine-like wave at the end, 0.09 at the beginning helps make the peaks standout
+		var height=LinLin.kr(y,0.5.neg,0.5,1,0.5);
+		1.neg*FOS.ar((height*LFGauss.ar(1/freq,width,0.5))+(1*LFGauss.ar(1/freq,width,y)),1,-1,0.995)
+	};
+	[x.value(0.5),x.value(0.25),x.value(0.0),x.value(-0.1),x.value(-0.2),x.value(-0.5)]
+}.plot(1/100*4);
+)
+
+
+
+
+(
+x=Synth.tail(s,"fx");
+Synth.head(s,"pulsetrain",[\note,60]);
+Synth.head(s,"pulsetrain",[\note,57]);
+Synth.head(s,"pulsetrain",[\note,67]);
+)
+
+Synth.head(s,"pulsetrain",[\note,60]);
+
+(
+SynthDef("fx",{
+	var snd=In.ar(0,2);
+	snd=SelectX.ar(LFNoise2.kr(1/3).range(0.15,0.5), [snd,Fverb.ar(snd[0],snd[1],60,decay:LFNoise2.kr(1/4).range(70,90))]);
+	ReplaceOut.ar(0,snd);
+
+}).add;
+SynthDef("pulsetrain",{
+	arg note=60;
+	var freq=note.midicps;
+	var snd;
+	var x={arg y;
+		var width=LinLin.kr(y,0.5,0.5.neg,0.09,0.13); // 0.11 is best, but 0.13 helps make a nice sine-like wave at the end
+		var height=LinLin.kr(y,0.5.neg,0.5,1,0.5);
+		1.neg*FOS.ar((height*LFGauss.ar(1/freq,width,0.5))+(1*LFGauss.ar(1/freq,width,y)),1,-1,0.995)
+	};
+	snd=x.value(MouseX.kr(-0.5,0.5));
+	snd=LPF.ar(snd,freq*MouseY.kr(1,8));
+	snd=Pan2.ar(snd,0);
+	Out.ar(0,snd/10);
+}).play;
+)
+
+
