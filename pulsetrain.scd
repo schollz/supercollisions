@@ -203,21 +203,21 @@ s.waitForBoot({
 		}).add;
 		SynthDef("pulsetrain",{
 			arg note=72,modh=0;
-			var freq=note.midicps;
+			var freq=(note+LFTri.kr(3).range(-0.05,0.05)).midicps;
 			var snd;
 			var	x={arg y,mod=0;
 				var width=0.15; // trial and error
-				var amp=LinLin.kr(y,0,0.5,0.5,1); // volume compensation
-				var saw=LinLin.kr(y,0.0,0.5,0.25,0.0);
+				var amp=LinLin.ar(y,0,0.5,0.5,1); // volume compensation
+				var saw=LinLin.ar(y,0.0,0.5,0.25,0.0);
 				var crossover=0.25;
-				var height1=Select.kr(y>crossover,[
-					LinLin.kr(y,0,crossover,0.5,1.1),
-					LinLin.kr(y,crossover,0.5,1.1,1)
-				]);
-				var height2=SinOsc.kr(mod).linlin(0,1,1,SinOsc.kr(mod/2).range(0,0.5));
+				var height1=Select.ar(y>crossover,[
+					LinLin.ar(y,0,crossover,0.5,1.1),
+					LinLin.ar(y,crossover,0.5,1.1,1)
+				])*mod;
+				var height2=1;
 				//var height1=LinLin.kr(y,0,0.5,1.5,1);
-				var base_height=LinLin.kr(y,0.0,0.5,0.5,0.5); // trial and error
-				var onepole=LinExp.kr(y,0,0.5,0.96,0.995);
+				var base_height=LinLin.ar(y,0.0,0.5,0.5,0.5); // trial and error
+				var onepole=LinExp.ar(y,0,0.5,0.96,0.995);
 				var base_offset=0.0; // trial and error
 				//var snd_=(DelayL.ar(LFPulse.ar(freq,0,width,base_height),1/freq,1/freq*y))+(LFPulse.ar(freq,base_offset,width,height1*base_height));
 				var snd_=(base_height*height2*LFGauss.ar(1/freq,width,0.5+base_offset))+(base_height*height1*LFGauss.ar(1/freq,width,(y*2-0.5)*1.neg));
@@ -230,8 +230,10 @@ s.waitForBoot({
 				//snd_=LPF.ar(amp*snd_,Clip.kr(freq*1*XLine.kr(4,1,0.6),20,20000))
 			};
 			//snd=x.value(SinOsc.kr(freq/8).range(0,0.5),freq/13)/2;
-			snd=x.value(Line.kr(0.0,0.5,3,doneAction:2),0)/2;
+			// snd=x.value(Line.kr(0.0,0.5,3,doneAction:2),0)/2;
+			snd=x.value(LFNoise2.ar(freq/4).range(0.1,0.4),LFNoise2.ar(freq/32).range(0.5,1));
 			snd=(snd*Line.kr(1,1.4,0.6))+Saw.ar(freq,mul:Line.kr(0.21,0.0,0.15));
+			snd=snd.tanh/4;
 			Out.ar(0,snd!2);
 		}).add;
 		s.sync;
