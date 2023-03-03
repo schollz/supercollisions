@@ -18,7 +18,7 @@ s.waitForBoot{
 			var startphase=1.neg;
 			var width=0.15;
 			var g1height=1;
-			var g2height=LinLin.kr(g2phase,0,1,0.75,1)*SinOsc.kr(3.9).range(0,1);
+			var g2height=LinLin.kr(g2phase,0,1,0.75,1)*LFNoise2.kr(3.9).range(0,1);
 			var g1=LFGauss.ar(
 				duration:1/freq,
 				width:width,
@@ -30,14 +30,25 @@ s.waitForBoot{
 				iphase:startphase+g2phase,
 			)*1.neg*g2height;
 			snd=g1+g2;
-			snd=snd+FOS.ar(Saw.ar(freq2,mul:24.neg.dbamp),0.6921,0,0.3079);
-			snd=snd+FOS.ar(WhiteNoise.ar(54.neg.dbamp),0.6921,0,0.3079);
 
-			snd=snd*EnvGen.ar(Env.new([lfomin,lfomax,lfomax,lfomin,lfomin,lfomin],[0.07,0.07,0.01,0.1,0.03],'lin',4,0),timeScale:LFNoise0.kr(10).range(0.5,4));
-			snd=snd*LFNoise1.ar(4).range(1.neg.dbamp,1.dbamp);
+
+			// add some beating
+			snd=snd+SinOsc.ar(freq+LFNoise2.kr(1).range(2,4),mul:0.05);
+
+			// add some higher harmonics
+			snd=snd+
+			FOS.ar(Saw.ar(freq,0.5),
+				DC.kr(1-exp(-2.0*3.14159265*freq*2/s.sampleRate)),0,DC.kr(exp(-2.0*3.14159265*1000.0/s.sampleRate)));
+
+
+
+			snd=snd*Lag.kr(ToggleFF.kr(Dust.kr(3),0.2)).range(12.neg.dbamp,0.dbamp);
+
 			snd=LeakDC.ar(snd);
 
-			snd=(snd*(6.dbamp)).tanh;
+			snd=snd*Lag.kr(Trig.kr(Dust.kr(3)).range(0.dbamp,6.dbamp));
+
+			snd=(snd*2.dbamp).tanh;
 
 			// OnePoleHPF 20
 			snd=FOS.ar(snd,0.9567,0,0.0433.neg);
@@ -45,32 +56,33 @@ s.waitForBoot{
 			snd=FOS.ar(snd,0.9566,0,0.0434.neg);
 			// OnePoleHPF 100
 			snd=FOS.ar(snd,0.9562,0,0.0438.neg);
-			snd=BLowShelf.ar(snd,100,1.0,-12);
 			// 6k OP LPF
-			snd=FOS.ar(snd,0.5441,0,0.4559);
+			snd=FOS.ar(snd,DC.kr(1-exp(-2.0*3.14159265*7000.0/s.sampleRate)),0,DC.kr(exp(-2.0*3.14159265*6000.0/s.sampleRate)));
 			// 9k OP LPF
-			snd=FOS.ar(snd,0.6921,0,0.3079);
+			snd=FOS.ar(snd,DC.kr(1-exp(-2.0*3.14159265*9000.0/s.sampleRate)),0,DC.kr(exp(-2.0*3.14159265*9000.0/s.sampleRate)));
+
 
 			snd=LPF.ar(snd,19000);
 
 			snd=snd*6.neg.dbamp;
-			snd=Select.ar(snd>0,{
-				[snd*LFNoise1.ar(1).range(3.neg.dbamp,3),snd*LFNoise1.ar(10).range(6.neg.dbamp,6.dbamp)]
-			});
 			snd=HPF.ar(snd,30);
 			snd=HPF.ar(snd,6);
 			snd;
 		};
-		snd2=x.value(SinOsc.kr(3.5).range(0,1))/6;
+		snd2=x.value(LFNoise2.kr(3.0).range(0,1))/6;
 		Out.ar(0,snd2!2);
 	}).add;
 	{
-		var in=In.ar(0,2);
+		var snd=In.ar(0,2);
+		var random_modulation={LFNoise2.kr(1/4)}!4;
 		// RecordBuf.ar(in,b,doneAction:2);
-		ReplaceOut.ar(0,in);
+		//snd=SelectX.ar(random_modulation[0].range(0.1,0.5),[snd,Fverb.ar(snd[0],snd[1],50,decay:random_modulation[1].range(70,90))]);
+		ReplaceOut.ar(0,snd);
 	}.play;
 	s.sync;
 	Synth("pulse",[\note,72]);
+	Synth("pulse",[\note,72+3]);
+	Synth("pulse",[\note,72+7]);
 	// Routine {
 	// 	b.duration.wait;
 	// 	b.write("/tmp/mine.wav","wav","int16");
