@@ -1,9 +1,9 @@
 (
 s.waitForBoot{
-	var duration=2;
+	var duration=10;
 	b=Buffer.alloc(s,s.sampleRate*duration,2);
 	s.sync;
-	{
+	SynthDef("pulse",{
 		arg note=72;
 		var snd2;
 		var amplitude;
@@ -31,9 +31,9 @@ s.waitForBoot{
 			)*1.neg*g2height;
 			snd=g1+g2;
 			snd=snd+FOS.ar(Saw.ar(freq2,mul:24.neg.dbamp),0.6921,0,0.3079);
-			snd=snd+FOS.ar(WhiteNoise.ar(42.neg.dbamp),0.6921,0,0.3079);
+			snd=snd+FOS.ar(WhiteNoise.ar(54.neg.dbamp),0.6921,0,0.3079);
 
-			snd=snd*EnvGen.ar(Env.new([lfomin,lfomax,lfomax,lfomin,lfomin,lfomin],[0.07,0.07,0.01,0.1,0.03],'lin',4,0));
+			snd=snd*EnvGen.ar(Env.new([lfomin,lfomax,lfomax,lfomin,lfomin,lfomin],[0.07,0.07,0.01,0.1,0.03],'lin',4,0),timeScale:LFNoise0.kr(10).range(0.5,4));
 			snd=snd*LFNoise1.ar(4).range(1.neg.dbamp,1.dbamp);
 			snd=LeakDC.ar(snd);
 
@@ -61,10 +61,16 @@ s.waitForBoot{
 			snd=HPF.ar(snd,6);
 			snd;
 		};
-		snd2=x.value(SinOsc.kr(3.5).range(0,1));
-		RecordBuf.ar(snd2!2,b,doneAction:2);
-		Out.ar(0,Silent.ar());
+		snd2=x.value(SinOsc.kr(3.5).range(0,1))/6;
+		Out.ar(0,snd2!2);
+	}).add;
+	{
+		var in=In.ar(0,2);
+		RecordBuf.ar(in,b,doneAction:2);
+		ReplaceOut.ar(0,Silent.ar());
 	}.play;
+	s.sync;
+	Synth("pulse",[\note,72]);
 	Routine {
 		b.duration.wait;
 		b.write("/tmp/mine.wav","wav","int16");
