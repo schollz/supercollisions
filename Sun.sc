@@ -9,23 +9,29 @@ Sun {
 	var windata;
 	var sectors;
 	var max_note_num;
+	var synName;
+	var synOutput;
+	var scale;
 
 	*new {
-		arg argServer;
-		^super.new.init(argServer);
+		arg argServer, argSynName, argSynOutput, argScale, argTimes, argNums;
+		^super.new.init(argServer, argSynName, argSynOutput, argScale, argTimes, argNums);
 	}
 
 	init {
-		arg argServer;
+		arg argServer, argSynName, argSynOutput, argScale, argTimes, argNums;
 		var scale=[];
 		var nr={
 			arg m,s;
 			Pgauss.new(m,s,1).asStream.nextN(1)[0]
 		};
 
+		synName = argSynName;
+		synOutput = argSynOutput;
+
 		max_note_num = 48;
 		10.do({ arg i;
-			(Scale.major.degrees+((i+1)*12)).do({ arg v;
+			(argScale.degrees+((i+1)*12)).do({ arg v;
 				if (scale.size<max_note_num) {
 					scale=scale.add(v);
 				}
@@ -42,75 +48,13 @@ Sun {
 		oscs = Dictionary.new();
 		sectors = Dictionary.new();
 
-		sectors.put("avg",[10,7,5,2]);
-		sectors.put("spread",[3,2,1,0.5]);
+		sectors.put("avg",argTimes);
 		//sectors.put("num",[2,3,4,2]);
-	 	sectors.put("num",[1,2,3,1]);
-		sectors.put("db",[6,-6,-9,-18]);
+		sectors.put("num",argNums);
+		sectors.put("db",[9,-3,-9,-24]);
 		sectors.postln;
 		windata = Array.newClear(128);
 		recording = false;
-
-
-		// effects
-		SynthDef("effects",{
-			arg amp=1.0;
-			var snd=In.ar(0,2);
-			var random_modulation={LFNoise2.kr(1/4)}!4;
-			snd=HPF.ar(snd,30);
-			// Fverb is better, release coming soon
-			snd=AnalogTape.ar(snd,0.9,0.9,0.8,2);
-			// snd=SelectX.ar(LFNoise2.kr(1/5).range(0,1),[snd,AnalogVintageDistortion.ar(snd,0.1,0.1,oversample:2)]);
-			snd=SelectX.ar(random_modulation[0].range(0.1,0.5),[snd,Fverb.ar(snd[0],snd[1],50,decay:random_modulation[1].range(70,90))]);
-			ReplaceOut.ar(0,snd*Lag.kr(amp));
-		}).send(server);
-
-
-		SynthDef("sine",{
-			arg note=60,amp=0.5,out=0,attack=1,decay=1;
-			var snd = Silent.ar(2);
-			var pan = LFNoise2.kr(1/Rand(3,6)).range(-0.5,0.5);
-			var env = EnvGen.ar(Env.perc(attack,decay,amp,[4,4]),doneAction:2);
-			var detune = LFNoise2.kr(1/Rand(1,5)).range(-0.1,0.1);
-
-			// klank 
-			// note = note + detune;
-            // snd = snd + Klank.ar(`[[note.midicps,note.midicps*2,note.midicps*4,note.midicps*6],nil,[1,0.9,0.7,0.3]], PinkNoise.ar([0.05, 0.05]));
-           	// snd = HPF.ar(snd,note.midicps/2);
-           	// snd = LPF.ar(snd,note.midicps*8);
-
-           	// sine
-			// snd = snd + SinOsc.ar([note-detune,note+detune].midicps);
-
-			// pwm
-			snd = snd + PulseDPW.ar(
-				freq:[note-detune,note+detune].midicps,
-				width:SinOsc.kr(Rand(1,3),Rand(0,pi)).range(0.3,0.7)
-			);
-
-			// saw
-			// snd = snd + SawDPW.ar(
-			// 	freq:[note-detune,note+detune].midicps,
-			// );
-
-			// snd = snd.fold(Rand(-1,0),Rand(0,1));
-
-			// snd = LockhartWavefolder.ar(snd[0] * LFNoise1.kr(1/4).range(1,10), 4) + ((LockhartWavefolder.ar(snd[1] * LFNoise1.kr(1/4).range(1,10), 4)) * [-1,1]);
-			// snd = RLPF.ar(snd, LinExp.kr(LFNoise2.kr(1/4).range(0.01,1),0.01,1,200,4000),LFNoise2.kr(1/4).range(0.1,1));
-			// snd = AnalogVintageDistortion.ar(snd,0,1,0.1,0.1);
-
-			snd = LeakDC.ar(snd);
-
-			snd = RLPF.ar(snd,
-				freq:note.midicps*LFNoise2.kr(1).range(3,6),
-				rq:LFNoise2.kr(1/4).range(0.1,1)
-			);
-
-			snd = Balance2.ar(snd[0],snd[1],pan);
-			SendReply.kr(Impulse.kr(25),"/sunposition",[\sector.kr(0),note,env,pan,detune.abs]);
-			Out.ar(out,snd*env/12);
-		}).send(server);
-
 
 		oscs.put("sunposition",OSCFunc({ |msg|
 			var oscRoute=msg[0];
@@ -126,7 +70,7 @@ Sun {
 
 		server.sync;
 
-		syns.put("fx",Synth.tail(server,"effects"));
+		syns.put("fx",Synth.tail(server,synOutput));
 
 		4.do{ arg sector;
 			var timescale=1;
@@ -136,12 +80,12 @@ Sun {
 				Routine {
 					inf.do{
 						var note=notes.choose;
-						var attack=(nr.value(sectors.at("avg")[sector],sectors.at("spread")[sector])*timescale).clip(0.01,30);
-						var decay=(nr.value(sectors.at("avg")[sector],sectors.at("spread")[sector])*timescale).clip(0.01,30);
+						var attack=(nr.value(sectors.at("avg")[sector],sectors.at("avg")[sector]*rrand(0.2,0.3))*timescale).clip(0.01,30);
+						var decay=(nr.value(sectors.at("avg")[sector],sectors.at("avg")[sector]*rrand(0.2,0.3))*timescale).clip(0.01,30);
 
 						if (windata.at(note).isNil,{
 							[sector,note,attack,decay].postln;
-							Synth.before(syns.at("fx"),"sine",[
+							Synth.before(syns.at("fx"),synName,[
 								\sector,sector,
 								\note,note,
 								\amp,(sectors.at("db")[sector]+rrand(-3,3)).dbamp,
