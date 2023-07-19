@@ -14,7 +14,7 @@ x=SynthDef("tapestop",{
 	var snd=PlayBuf.ar(2,bufnum,tape_env,loop:1);
 	snd=snd*Lag.kr(tape_env>0.04701);
 	// snd=snd*EnvGen.kr(Env.circle([0,1], [60/120-(60/120/8),(60/120/8)], curve: 'sine')).poll;
-	snd=snd*EnvGen.kr(Env.circle([1,0.9,0.8,0.1], [3/8,3/8,1/8,1/8]*60/150, curve: 'lin')).poll;
+	//snd=snd*EnvGen.kr(Env.circle([1,0.9,0.8,0.1], [3/8,3/8,1/8,1/8]*60/150, curve: 'lin')).poll;
 	Out.ar(out,snd);
 }).play(s, [\out, 0, \bufnum, c.bufnum]);
 )
