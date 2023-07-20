@@ -39,17 +39,22 @@ s.waitForBoot({
 			draw.value;
 			if (press1<0,{
 				press1 = pos;
-				syn.set(\pos,pos01,\t_trig,1);
+				syn.set(\pos,pos01,\do_trig,1);
 			},{
 				press2 = pos;
 				syn.set(\retrig,pos01*32);
+				if (pos>64,{
+					syn.set(\do_ramp,1);
+				});
 			});
 		},{
 			if (press2>1.neg,{
 				press2=1.neg;
 				syn.set(\retrig,0);
+				syn.set(\do_ramp,0);
 			},{
 				press1=1.neg;
+				syn.set(\do_trig,0);
 			});
 		});
 		[press1,press2].postln;
@@ -83,18 +88,18 @@ s.waitForBoot({
 
 
 	SynthDef("0",{
-		arg out,buf,start=0,dur=0.25,bpm=160,bpm_source=150,do_retrig=0,t_trig=0,pos=0,retrig=0;
+		arg out,buf,start=0,dur=0.25,bpm=160,bpm_source=150,do_retrig=0,do_trig=0,do_ramp=0,pos=0,retrig=0;
 		var snd,snd1,snd2,rate, phase1, phase2,trig;
 		var retrig_rate =retrig*bpm/60/2;
-		var do_ramp = (retrig>0)*Demand.kr(retrig>0,0,Drand([0,1,1,0,0],inf));
+		var quantize = Impulse.kr(bpm/60*2);
 		rate=BufRateScale.ir(buf)*bpm/bpm_source;
-		trig=ToggleFF.kr(t_trig+Impulse.kr(retrig_rate));
+		trig=ToggleFF.kr(((retrig_rate<1)*(quantize*do_trig))+((retrig_rate>0)*Impulse.kr(retrig_rate)));
 		phase1=Phasor.ar(trig:trig,rate:rate,end:BufFrames.ir(buf),resetPos:pos*BufFrames.ir(buf));
 		snd1=BufRd.ar(2,buf,phase1,interpolation:4);
 		phase2=Phasor.ar(trig:1-trig,rate:rate,end:BufFrames.ir(buf),resetPos:pos*BufFrames.ir(buf));
 		snd2=BufRd.ar(2,buf,phase2,interpolation:4);
 		snd=SelectX.ar(Lag.kr(trig,0.05),[snd2,snd1]);
-		snd=snd*SelectX.kr(Lag.kr(do_ramp),[1,EnvGen.ar(Env.new([0,36.neg,0],[0.05,(16/retrig_rate)]),do_ramp).dbamp]);
+		snd=snd*SelectX.kr(Lag.kr(do_ramp),[1,EnvGen.ar(Env.new([0,36.neg,0],[0.05,(LFNoise0.kr(1).range(5,32).round/retrig_rate)]),do_ramp).dbamp]);
 		SendReply.kr(Impulse.kr(10),"/pos",Select.kr(trig,[phase2,phase1])/BufFrames.ir(buf));
 		// snd = Fverb.ar(snd[0],snd[1]);
 		Out.ar(out,snd * 24.neg.dbamp);
@@ -132,6 +137,7 @@ s.waitForBoot({
 		s.sync;
 
 		b=Buffer.read(s, thisProcess.nowExecutingPath.dirname++"/HGAT_120_full_drum_loop_granular_key_bpm120_beats16_.flac");
+		//b=Buffer.read(s, thisProcess.nowExecutingPath.dirname++"/vocals_bpm100.flac");
 		s.sync;
 
 		syn=Synth("0",[
