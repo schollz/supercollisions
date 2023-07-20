@@ -45,6 +45,8 @@ s.waitForBoot({
 				syn.set(\retrig,pos01*32);
 				if (pos>64,{
 					syn.set(\do_ramp,1);
+				},{
+					syn.set(\do_ramp_down,1);
 				});
 			});
 		},{
@@ -52,6 +54,7 @@ s.waitForBoot({
 				press2=1.neg;
 				syn.set(\retrig,0);
 				syn.set(\do_ramp,0);
+				syn.set(\do_ramp_down,0);
 			},{
 				press1=1.neg;
 				syn.set(\do_trig,0);
@@ -88,18 +91,19 @@ s.waitForBoot({
 
 
 	SynthDef("0",{
-		arg out,buf,start=0,dur=0.25,bpm=160,bpm_source=150,do_retrig=0,do_trig=0,do_ramp=0,pos=0,retrig=0;
+		arg out,buf,start=0,dur=0.25,bpm=160,bpm_source=150,do_retrig=0,do_trig=0,do_ramp=0,do_ramp_down=0,pos=0,retrig=0;
 		var snd,snd1,snd2,rate, phase1, phase2,trig;
 		var retrig_rate =retrig*bpm/60/2;
 		var quantize = Impulse.kr(bpm/60*2);
 		rate=BufRateScale.ir(buf)*bpm/bpm_source;
 		trig=ToggleFF.kr(((retrig_rate<1)*(quantize*do_trig))+((retrig_rate>0)*Impulse.kr(retrig_rate)));
-		phase1=Phasor.ar(trig:trig,rate:rate,end:BufFrames.ir(buf),resetPos:pos*BufFrames.ir(buf));
+		phase1=Phasor.ar(trig:trig,rate:rate,end:BufFrames.ir(buf),resetPos:(pos*64).round/64*BufFrames.ir(buf));
 		snd1=BufRd.ar(2,buf,phase1,interpolation:4);
-		phase2=Phasor.ar(trig:1-trig,rate:rate,end:BufFrames.ir(buf),resetPos:pos*BufFrames.ir(buf));
+		phase2=Phasor.ar(trig:1-trig,rate:rate,end:BufFrames.ir(buf),resetPos:(pos*64).round/64*BufFrames.ir(buf));
 		snd2=BufRd.ar(2,buf,phase2,interpolation:4);
 		snd=SelectX.ar(Lag.kr(trig,0.05),[snd2,snd1]);
 		snd=snd*SelectX.kr(Lag.kr(do_ramp),[1,EnvGen.ar(Env.new([0,36.neg,0],[0.05,(LFNoise0.kr(1).range(5,32).round/retrig_rate)]),do_ramp).dbamp]);
+		snd=snd*SelectX.kr(Lag.kr(do_ramp_down),[1,EnvGen.ar(Env.new([0,36.neg,0],[(LFNoise0.kr(1).range(4,16).round/retrig_rate),0.05]),do_ramp_down).dbamp]);
 		SendReply.kr(Impulse.kr(10),"/pos",Select.kr(trig,[phase2,phase1])/BufFrames.ir(buf));
 		// snd = Fverb.ar(snd[0],snd[1]);
 		Out.ar(out,snd * 24.neg.dbamp);
