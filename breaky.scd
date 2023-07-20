@@ -41,14 +41,15 @@ s.waitForBoot({
 
 	Routine {
 		s.sync;
-		b=Buffer.read(s, thisProcess.nowExecutingPath.dirname++"/amenbreak_bpm136.wav");
+
+		b=Buffer.read(s, thisProcess.nowExecutingPath.dirname++"/HGAT_120_full_drum_loop_granular_key_bpm120_beats16_.flac");
 		s.sync;
 
 		Synth("0",[
 			out:0,
 			buf:b,
 			bpm:170,
-			bpm_source:136,
+			bpm_source:120,
 		]);
 	}.play;
 
