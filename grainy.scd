@@ -3,7 +3,7 @@ s.boot;
 (
 var winenv;
 
-b=Buffer.readChannel(s,"/home/zns/Documents/supercollisions/row1/HGAT_120_full_drum_loop_granular_key_bpm120_beats16_.flac",0,-1,0);
+b=Buffer.readChannel(s,"/home/zns/Documents/supercollisions/vocals_bpm100.flac",0,-1,0);
 // a custom envelope
 winenv = Env([0, 1, 0], [0.5, 0.5], [8, -8]);
 z = Buffer.sendCollection(s, winenv.discretize, 1);
