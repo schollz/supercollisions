@@ -33,7 +33,8 @@ Ndef(\test, {
 
 
 	snd2=snd;
-	snd2=FreeVerb.ar(snd2,room:10);
+	// snd2=FreeVerb.ar(snd2,room:10);
+	snd2=Fverb.ar(snd2[0],snd2[1],120);
 	snd2 = DelayN.ar(snd2, 0.03, 0.03);
 	snd2 = CombN.ar(snd2, 0.1, {Rand(0.01,0.099)}!32, 4);
 	snd2 = SplayAz.ar(2, snd2);

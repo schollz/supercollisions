@@ -5,12 +5,12 @@ s.waitForBoot({
 	Routine{
 		// set the bpm
 		var lastnote=false;
-		var bpm=110;
+		var bpm=130;
 		var scale=Scale.major;
 		var octaves;
 		var notes;
 		var syncopation;
-		var t = TempoClock(8*bpm/120);
+		t = TempoClock(8*bpm/120);
 
 		// define the synths
 		SynthDef("jp",{ | amp=1,freq = 523.3572, mix=0.75, detune = 0.75,lpf=10 |
@@ -51,7 +51,7 @@ s.waitForBoot({
 			sig = HPF.ar(sig ! 2, freq);
 			sig = MoogLadder.ar(sig,freq*lpf*3);
 			sig = Pan2.ar(sig);
-			Out.ar(0,sig/5*EnvGen.ar(Env.perc(0.0,1.5*amp),doneAction:2)*amp);
+			Out.ar(0,sig/5*EnvGen.ar(Env.perc(0.0,1.0*amp),doneAction:2)*amp);
 		}).send(s);
 		SynthDef("final",{
 			var snd2;
@@ -103,6 +103,7 @@ s.waitForBoot({
 		syncopation=[1,0.5,1,0.5,0.5,1,0.5,1];
 		syncopation=[1,1.5,0.2,0.5,0.5,1,0.5,1];
 		syncopation=[1,1.1,0.9];
+		syncopation=[1,1,0.4,1,1,0.4,1,0.4,1,0.4,1,0.4];
 		lastnote=false;
 		t.schedAbs(0, { arg i, sec;
 			var note=scale[notes[i.mod(notes.size)].mod(scale.size)]+octaves[i.mod(octaves.size)]+36;
@@ -129,3 +130,4 @@ s.waitForBoot({
 )
 )
 
+t = TempoClock(15*110/120);

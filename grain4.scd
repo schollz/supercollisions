@@ -43,10 +43,12 @@ s.waitForBoot({
 
 		s.sync;
 
-		b=Buffer.readChannel(s,thisProcess.nowExecutingPath.dirname++"/vocals_bpm100.flac",channels:[0]);
+		// b=Buffer.readChannel(s,thisProcess.nowExecutingPath.dirname++"/vocals_bpm100.flac",channels:[0]);
+		b=Buffer.readChannel(s,thisProcess.nowExecutingPath.dirname++"/vocals_bpm120_dm.wav",channels:[0]);
 		s.sync;
 		c=Buffer.readChannel(s,thisProcess.nowExecutingPath.dirname++"/synth_dm_bpm130.flac",channels:[0]);
 		// b=Buffer.readChannel(s,thisProcess.nowExecutingPath.dirname++"/kalimba.wav",channels:[0]);
+		// d=Buffer.readChannel(s,thisProcess.nowExecutingPath.dirname++"/pad_bpm124_dm.flac",channels:[0]);
 
 		s.sync;
 		x = Synth.tail(s,"fx");

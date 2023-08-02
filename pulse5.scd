@@ -19,7 +19,7 @@ s.waitForBoot{
 			var startphase=1.neg;
 			var width=0.15;
 			var g1height=1;
-			var g2height=LinLin.kr(g2phase,0,1,0.75,1)*LFNoise2.kr(3.9).range(0,1);
+			var g2height=LinLin.kr(g2phase,0,1,0.75,1);
 			var g1=LFGauss.ar(
 				duration:1/(freq+freqmod),
 				width:width,
@@ -70,21 +70,22 @@ s.waitForBoot{
 			snd=HPF.ar(snd,6);
 			snd;
 		};
-		snd2=x.value(LFNoise2.kr(3.0).range(0,1))/6;
-		snd2=snd2+(x.value(0)*SinOsc.kr(1/3,mul:0.5).abs);
+		snd2=x.value(SinOsc.ar(note.midicps/5))/6;
+		// snd2=x.value(LFNoise2.kr(3.0).range(0,1))/6;
+		// snd2=snd2+(x.value(0)*SinOsc.kr(1/3,mul:0.5).abs);
 		Out.ar(0,snd2!2);
 	}).add;
 	{
 		var snd=In.ar(0,2);
 		var random_modulation={LFNoise2.kr(1/4)}!4;
 		// RecordBuf.ar(in,b,doneAction:2);
-		//snd=SelectX.ar(random_modulation[0].range(0.1,0.5),[snd,Fverb.ar(snd[0],snd[1],50,decay:random_modulation[1].range(70,90))]);
+		snd=SelectX.ar(random_modulation[0].range(0.1,0.5),[snd,Fverb.ar(snd[0],snd[1],50,decay:random_modulation[1].range(70,90))]);
 		ReplaceOut.ar(0,snd);
 	}.play;
 	s.sync;
 	Synth("pulse",[\note,72]);
-	// Synth("pulse",[\note,72+3]);
-	// Synth("pulse",[\note,72+7]);
+	Synth("pulse",[\note,72+3]);
+	Synth("pulse",[\note,72+7]);
 	// Routine {
 	// 	b.duration.wait;
 	// 	b.write("/tmp/mine.wav","wav","int16");

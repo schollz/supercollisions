@@ -224,7 +224,7 @@ s.waitForBoot({
 		//b=Buffer.read(s, thisProcess.nowExecutingPath.dirname++"/vocals_bpm100.flac");
 		s.sync;
 
-		syn=Synth("5",[
+		syn=Synth("6",[
 			out:0,
 			buf:b,
 			bpm:150,
