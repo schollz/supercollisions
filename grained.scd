@@ -72,16 +72,21 @@ s.waitForBoot({
 		ReplaceOut.ar(0,snd);
 	}).send(s);
 	Routine {
+		s.sync;
 		Synth.tail(s,"fx");
 		s.sync;
-		Buffer.read(Server.default, thisProcess.nowExecutingPath.dirname++"/AA_SC_AT_120_synth_chords_about_Amin_keyAmin_bpm120_beats16_.flac", action: {arg buf;
+		Buffer.read(Server.default, thisProcess.nowExecutingPath.dirname++"/test1.wav", action: {arg buf;
 			buf.postln;
 			x=Synth.head(s,"looper2",[buf:buf]);
 		});
-		Buffer.read(Server.default, thisProcess.nowExecutingPath.dirname++"/PMJO_Vocal_Sessions_New_Plan_120_Am_Vocal_Atmosphere_05_keyAmin_bpm120_beats32_.flac", action: {arg buf;
-			buf.postln;
-			y=Synth.head(s,"looper2",[buf:buf]);
+		/*Buffer.read(Server.default, thisProcess.nowExecutingPath.dirname++"/AA_SC_AT_120_synth_chords_about_Amin_keyAmin_bpm120_beats16_.flac", action: {arg buf;
+		buf.postln;
+		x=Synth.head(s,"looper2",[buf:buf]);
 		});
+		Buffer.read(Server.default, thisProcess.nowExecutingPath.dirname++"/PMJO_Vocal_Sessions_New_Plan_120_Am_Vocal_Atmosphere_05_keyAmin_bpm120_beats32_.flac", action: {arg buf;
+		buf.postln;
+		y=Synth.head(s,"looper2",[buf:buf]);
+		});*/
 	}.play;
 });
 )

@@ -6,7 +6,7 @@
 Ndef(\test, {
 	var snd,freq=45;
 	var noise;
-	var snd2, y,z;
+	var snd2, y,z, rev;
 
 	noise = WhiteNoise.ar * LFPulse.kr(freq * [0.5,2],0,0.01).range(0,0.3);
 	noise = BPF.ar(noise, LFNoise0.kr([1/5,1/4]).range(1000,8000).lag(1));
@@ -42,7 +42,14 @@ Ndef(\test, {
 	5.do{snd2 = AllpassN.ar(snd2, 0.1, {Rand(0.01,0.099)}!2, 3)};
 	snd2 = LPF.ar(snd2, 1500);
 	snd2 = LeakDC.ar(snd2);
-
-	Out.ar(0,SelectX.ar(SinOsc.kr(0.1).range(0.5,0.8),[snd,snd2]).tanh);
+	snd=SelectX.ar(SinOsc.kr(0.1).range(0.5,0.8),[snd,snd2]).tanh;
+	rev = Fverb.ar(snd[0],snd[1],
+		predelay:50,
+		tail_density:LFNoise2.kr(1/3).range(70,90),
+		decay:LFNoise2.kr(1/3).range(70,90)
+	);
+	snd = SelectX.ar(LFNoise2.kr(1/3).range(0.5,0.7),[snd,rev]);
+	snd = snd / 10;
+	Out.ar(0,snd);
 }).play
 )

@@ -190,8 +190,8 @@ s.waitForBoot({
 		phase2=Phasor.ar(trig:1-trig,rate:rate,end:BufFrames.ir(buf),resetPos:(pos*64).round/64*BufFrames.ir(buf));
 		snd2=BufRd.ar(2,buf,phase2,interpolation:4);
 		snd=SelectX.ar(Lag.kr(trig,0.05),[snd2,snd1]);
-		snd=snd*SelectX.kr(Lag.kr(do_ramp),[1,EnvGen.ar(Env.new([0,36.neg,0],[0.05,(LFNoise0.kr(1).range(5,32).round/retrig_rate)]),do_ramp).dbamp]);
-		snd=snd*SelectX.kr(Lag.kr(do_ramp_down),[1,EnvGen.ar(Env.new([0,36.neg,0],[(LFNoise0.kr(1).range(4,16).round/retrig_rate),0.05]),do_ramp_down).dbamp]);
+		snd=snd*SelectX.kr(Lag.kr(do_ramp),[1,EnvGen.ar(Env.new([0,36.neg,0],[0.05,(LFNoise0.kr(1).range(4,16).round/retrig_rate)]),do_ramp).dbamp]);
+		snd=snd*SelectX.kr(Lag.kr(do_ramp_down),[1,EnvGen.ar(Env.new([0,36.neg,0],[(LFNoise0.kr(1).range(4,12).round/retrig_rate),0.05]),do_ramp_down).dbamp]);
 		SendReply.kr(Impulse.kr(10),"/pos",Select.kr(trig,[phase2,phase1])/BufFrames.ir(buf));
 		// snd = Fverb.ar(snd[0],snd[1]);
 		Out.ar(out,snd * 24.neg.dbamp);
@@ -220,6 +220,7 @@ s.waitForBoot({
 		s.sync;
 
 		b=Buffer.read(s, thisProcess.nowExecutingPath.dirname++"/HGAT_120_full_drum_loop_granular_key_bpm120_beats16_.flac");
+		// b=Buffer.read(s, thisProcess.nowExecutingPath.dirname++"/amenbreak_bpm136.wav");
 		// b=Buffer.read(s, thisProcess.nowExecutingPath.dirname++"/vocals_bpm100.flac");
 		//b=Buffer.read(s, thisProcess.nowExecutingPath.dirname++"/vocals_bpm100.flac");
 		s.sync;

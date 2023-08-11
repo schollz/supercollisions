@@ -5,7 +5,7 @@ s.waitForBoot({
 	Routine{
 		// set the bpm
 		var lastnote=false;
-		var bpm=130;
+		var bpm=120;
 		var scale=Scale.major;
 		var octaves;
 		var notes;
@@ -51,7 +51,7 @@ s.waitForBoot({
 			sig = HPF.ar(sig ! 2, freq);
 			sig = MoogLadder.ar(sig,freq*lpf*3);
 			sig = Pan2.ar(sig);
-			Out.ar(0,sig/5*EnvGen.ar(Env.perc(0.0,1.0*amp),doneAction:2)*amp);
+			Out.ar(0,sig/5*EnvGen.ar(Env.perc(0.0,1.5*amp),doneAction:2)*amp);
 		}).send(s);
 		SynthDef("final",{
 			var snd2;
@@ -102,20 +102,20 @@ s.waitForBoot({
 		octaves=[0,0,0,12,12,12,24,24];
 		syncopation=[1,0.5,1,0.5,0.5,1,0.5,1];
 		syncopation=[1,1.5,0.2,0.5,0.5,1,0.5,1];
-		syncopation=[1,1.1,0.9];
-		syncopation=[1,1,0.4,1,1,0.4,1,0.4,1,0.4,1,0.4];
+		syncopation=[1,1.1,0.6];
+		// syncopation=[1,1,0.4,1,1,0.4,1,0.4,1,0.4,1,0.4];
 		lastnote=false;
 		t.schedAbs(0, { arg i, sec;
 			var note=scale[notes[i.mod(notes.size)].mod(scale.size)]+octaves[i.mod(octaves.size)]+36;
 			var accent=syncopation[i.mod(syncopation.size)];
 			[i,note-36,notes[i.mod(notes.size)],scale[notes[i.mod(notes.size)]]].postln;
-			if (i.mod(16)<1,{
-				"play chords".postln;
-				4.do({arg j;
-					var note2=scale[notes[(i+j).mod(notes.size)].mod(scale.size)]+octaves[(i+j).mod(octaves.size)]+36;
-					Synth("sine",[\note,note2+12,\amp,1.4]);
-				});
-			});
+			// if (i.mod(16)<1,{
+			// 	"play chords".postln;
+			// 	4.do({arg j;
+			// 		var note2=scale[notes[(i+j).mod(notes.size)].mod(scale.size)]+octaves[(i+j).mod(octaves.size)]+36;
+			// 		Synth("sine",[\note,note2+12,\amp,1.4]);
+			// 	});
+			// });
 			if ((100.rand<100)||(lastnote==false),{
 				lastnote=true;
 				Synth("jp",[\freq,note.midicps,\mix,(40+10.rand)/100,\detune,(25+30.rand)/100,\amp,accent,\lpf,18-(accent*12)]);
