@@ -1,7 +1,7 @@
 (
 s.waitForBoot({
     SynthDef("stretch",{
-        arg buf,pos=0.3,xfade=0.05,slowdown=4,windowSeconds=0.1;
+        arg buf,pos=0.3,xfade=0.01,slowdown=4,windowSeconds=0.1;
         var windowSelect,window,window1,window2,windowStart,windowTrig;
         var snd,snd1,snd2;
         var frames=BufFrames.ir(buf);
@@ -41,7 +41,7 @@ s.waitForBoot({
         Out.ar(0,snd);
     }).send(s);
     s.sync;
-    b=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/goalltheway.wav");
+    b=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/pad_bpm120_beats64.wav");
     s.sync;
     Synth("stretch",[\buf,b]);
 });
@@ -75,7 +75,7 @@ s.waitForBoot({
 		rate: playRate,
 		start: 0,
 		end: frames,
-		resetPos: phase,
+		// resetPos: phase,
 	);
 	window=Select.ar(windowSelect,[window1,window2]);
 	LocalOut.ar(window>(windowStart+windowFrames));
