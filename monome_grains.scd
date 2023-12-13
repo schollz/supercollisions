@@ -52,7 +52,7 @@ s.waitForBoot({
 				syns[y].set(\move_stop,0);
 			});
 		},{
-			syns[~press_last].set(\freqmul,y.linlin(2,8,10,0.01));
+			syns[~press_last].set(\freqmul,y.linlin(2,rows,10,0.01));
 			syns[~press_last].set(\rate,x.linlin(0,15,2.neg,2));
 		});
 
@@ -124,8 +124,8 @@ s.waitForBoot({
 			var snd,phase;
 			//freqmul = MouseY.kr(0.1,10);
 			//rate = MouseX.kr(2.neg,2);
-			freqmul = VarLag.kr(freqmul,(num*10)+1,warp:\sine);
-			rate = VarLag.kr(rate,(num*10)+1,warp:\sine);
+			freqmul = VarLag.kr(freqmul,(num*2)+1,warp:\sine);
+			rate = VarLag.kr(rate,(num*2)+1,warp:\sine);
 			phase = Phasor.ar(trig:t_jump,rate:(1-move_stop)*move*rate/BufFrames.ir(buf),resetPos:pos);
 			freq = freq * freqmul;
 			snd = GrainBuf.ar(
@@ -141,12 +141,11 @@ s.waitForBoot({
 				mul: [1,0.25,0.05]
 			);
 			snd = Mix.new(snd);
-			SendReply.kr(Impulse.kr(freq),"/pos",[num,phase,rate.linlin(2.neg,2,0,15).round,freqmul.linlin(0.1,10,7,2).round]);
+			SendReply.kr(Impulse.kr(freq),"/pos",[num,phase,rate.linlin(2.neg,2,0,15).round,freqmul.linlin(0.1,10,rows,2).round]);
 			Out.ar(0,snd * 12.neg.dbamp * db.dbamp);
 		}).add;
 
 		s.sync;
-		s.record;
 
 		b=Buffer.readChannel(s,thisProcess.nowExecutingPath.dirname++"/vocals_bpm100.flac",channels:[0]);
 		s.sync;

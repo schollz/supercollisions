@@ -26,9 +26,12 @@ s.waitForBoot({
 		// filtered detuned saw wave
 		// with opening filter
 		//
+		note=Select.kr(note<40,[note,note+12]);
+		note=Select.kr(note<40,[note,note+12]);
 		snd = Saw.ar([note-detune,note+detune].midicps);
 		snd = MoogFF.ar(snd,
 			LinExp.kr(0.01+EnvGen.kr(Env.perc(attack,decay)),0.01,1.01,freq,ExpRand(freq*2,20000)));
+
 
 		// sine with phase modulation feedack
 		// feedback is randomly modulated

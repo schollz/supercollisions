@@ -16,8 +16,8 @@ s.waitForBoot({
 			var rate=pitch.midiratio*BufRateScale.kr(buf);
 
 			// set the start/end points
-			var posStart = Clip.kr(LinLin.kr(MouseX.kr(0,1,0,0.05),0,1,0,frames),1024,frames-10240);
-			var posDuration = MouseY.kr(xfadetime,0.5,1,0.05).poll/duration*frames;
+			var posStart = Clip.kr(LinLin.kr(MouseX.kr(0,1,0,0.05)+LFNoise2.kr(0.3,0.1),0,1,0,frames),1024,frames-10240);
+			var posDuration = MouseY.kr(xfadetime,0.5,1,0.05)/duration*frames;
 			var posEnd = Clip.kr(posStart + posDuration,posStart+1024,frames-1024);
 
 			// LocalIn collects the a trigger whenever the playhead leaves the window
@@ -60,16 +60,33 @@ s.waitForBoot({
 			Out.ar(0,snd);
 		}).add;
 	});
+	SynthDef("fx",{
+		var snd=In.ar(0,2);
+		var rev = Fverb.ar(snd[0],snd[1],
+			predelay:50,
+			tail_density:LFNoise2.kr(1/3).range(50,90),
+			decay:LFNoise2.kr(1/3).range(50,90)
+		);
+		snd = SelectX.ar(LFNoise2.kr(1/3).range(0.1,0.3),[snd,rev]);
+		//snd = AnalogTape.ar(snd,0.9,0.9,0.9,4);
+		ReplaceOut.ar(0,snd);
+	}).send(s);
 	Routine {
 		s.sync;
-		Buffer.read(Server.default, thisProcess.nowExecutingPath.dirname++"/AA_SC_AT_120_synth_chords_about_Amin_keyAmin_bpm120_beats16_.flac", action: {arg buf;
+		Synth.tail(s,"fx");
+		s.sync;
+		Buffer.read(Server.default, thisProcess.nowExecutingPath.dirname++"/test1.wav", action: {arg buf;
 			buf.postln;
-			x=Synth("looper2",[buf:buf]);
+			x=Synth.head(s,"looper2",[buf:buf]);
+		});
+		/*Buffer.read(Server.default, thisProcess.nowExecutingPath.dirname++"/AA_SC_AT_120_synth_chords_about_Amin_keyAmin_bpm120_beats16_.flac", action: {arg buf;
+		buf.postln;
+		x=Synth.head(s,"looper2",[buf:buf]);
 		});
 		Buffer.read(Server.default, thisProcess.nowExecutingPath.dirname++"/PMJO_Vocal_Sessions_New_Plan_120_Am_Vocal_Atmosphere_05_keyAmin_bpm120_beats32_.flac", action: {arg buf;
-			buf.postln;
-			y=Synth("looper2",[buf:buf]);
-		});
+		buf.postln;
+		y=Synth.head(s,"looper2",[buf:buf]);
+		});*/
 	}.play;
 });
 )

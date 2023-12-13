@@ -38,7 +38,7 @@ SynthDef("saw",{
 	var sig = (center * centerGain.(mix)) + (side * sideGain.(mix));
 
 	sig = HPF.ar(sig, freq);
-	//sig = RLPF.ar(sig,MouseX.kr(10,18000,1),0.707);
+	sig = RLPF.ar(sig,MouseX.kr(10,18000,1),0.707);
 	Out.ar(0,sig);
 }).add;
 )
