@@ -25,7 +25,7 @@ s.waitForBoot{
 			snd = LeakDC.ar(snd);
 			snd = SelectX.ar(0.1,[snd,Fverb.ar(snd[0],snd[1])]);
 			// snd = Pan2.ar(snd);
-			Out.ar(0,snd*0.1);
+			Out.ar(0,snd*0.5);
 		}).send(s);
 		s.sync;
 		Synth.head(s,"fuzz",[\buf,b,\fuzzBuf,bufs.at("fuzzBuf")]);
