@@ -112,7 +112,7 @@ s.waitForBoot({
 				tail_density:LFNoise2.kr(1/3).range(50,90),
 				decay:LFNoise2.kr(1/3).range(50,90)
 			);
-			snd = SelectX.ar(LFNoise2.kr(1/3).range(0.1,0.3).poll,[snd,rev]);
+			snd = SelectX.ar(LFNoise2.kr(1/3).range(0.5,0.9).poll,[snd,rev]);
 			//snd = AnalogTape.ar(snd,0.9,0.9,0.9,4);
 			ReplaceOut.ar(0,snd);
 		}).send(s);
