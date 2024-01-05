@@ -32,8 +32,8 @@ s.waitForBoot({
 			RLPF.ar(snd,EnvGen.ar(Env.new([20000,500,20000],[0.01,LFNoise0.kr(1).range(1,5)]),retrig>0),0.25),
 		]);
 
-/*		sndD = (snd * 30.dbamp).tanh * -20.dbamp;
-		snd = SelectX.ar(MouseY.kr(),[snd,sndD]);*/
+		sndD = (snd * 30.dbamp).tanh * -20.dbamp;
+		snd = SelectX.ar(MouseY.kr(),[snd,sndD]);
 
 		Out.ar(out,snd*env);
 	}).send(s);

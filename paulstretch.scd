@@ -63,10 +63,9 @@ SynthDef("out",{
 (
 var envBuf, envSignal, wav;
 var stretch = 1000;
-s.record;
 wav="/home/zns/Documents/norns-docker/dust/audio/windchimes.wav";
 wav="/home/zns/Documents/supercollisions/whale.wav";
-wav="/home/zns/Downloads/seinfield.wav";
+wav=thisProcess.nowExecutingPath.dirname++"/seinfeld.wav";
 b=Buffer.read(s,wav,0,s.sampleRate*3);
 Buffer.readChannel(s, wav,0,-1,0,{
 	arg buffer1;
@@ -80,7 +79,7 @@ Buffer.readChannel(s, wav,0,-1,0,{
 			b.play;
 			b.duration.wait;
 			// Runs indefinitely
-			0.1.wait;
+			6.wait;
 			Synth.tail(s,"out");
 			0.1.wait;
 			Synth.head(s,\paulstretchMono, [\stretch, stretch, \bufnum, buffer1.bufnum, \envBufnum, envBuf.bufnum,\pan,-1]);

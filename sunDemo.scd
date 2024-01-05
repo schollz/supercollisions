@@ -64,7 +64,11 @@ s.waitForBoot({
 		var snd=In.ar(0,2);
 		snd=HPF.ar(snd,30);
 		snd=AnalogTape.ar(snd,0.9,0.9,0.8,2);
-		snd=SelectX.ar(LFNoise2.kr(1/4).range(0.5,0.9),[snd,Fverb.ar(snd[0],snd[1],50,decay:LFNoise2.kr(1/4).range(70,90))]);
+		snd=SelectX.ar(LFNoise2.kr(1/4).range(0.8,1.0),[snd,Fverb.ar(snd[0],snd[1],
+			200,
+			decay:LFNoise2.kr(1/4).range(70,90),
+			tail_density:LFNoise2.kr(1/4).range(70,90),
+		)]);
 		ReplaceOut.ar(0,snd*Lag.kr(amp));
 	}).send(s);
 

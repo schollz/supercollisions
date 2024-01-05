@@ -23,7 +23,7 @@ s.waitForBoot({
 		//snd = snd + PitchShift.ar(snd,pitchRatio:2,mul:0.1);
 		snd = SelectX.ar(MouseY.kr(),[snd,Fverb.ar(snd[0],snd[1],decay:LFNoise2.kr(1).range(70,90))]);
 		snd = snd * SelectX.ar(MouseX.kr(),[DC.ar(1),SinOsc.ar(MouseX.kr(0.1,12)).range(0,1.5)]);
-		Out.ar(0,snd*XLine.ar(0.001,1,3)*Line.ar());
+		Out.ar(0,snd*XLine.ar(0.001,1,3)*Line.ar()*0.2);
 	}).add;
 
 });
