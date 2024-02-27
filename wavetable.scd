@@ -52,10 +52,11 @@ SynthDef("out",{
 
 (
 Routine{
+	s.record;
 	Synth.tail(s,"out");
 	s.sync;
 	~chords=[[0,4,7],[-1,4,7],[-1,2,7],[-3,2,4]];
-	~root = 48;
+	~root = 40;
 	~synths=Dictionary.new();
 	inf.do({ arg i;
 		i.postln;

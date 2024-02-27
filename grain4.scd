@@ -44,12 +44,12 @@ s.waitForBoot({
 		}).add;
 
 		s.sync;
-/*		b=Buffer.readChannel(s,thisProcess.nowExecutingPath.dirname++"/PMJO_Vocal_Sessions_New_Plan_120_Am_Vocal_Atmosphere_05_keyAmin_bpm120_beats32_.flac",channels:[0]);
-		c=Buffer.readChannel(s,thisProcess.nowExecutingPath.dirname++"/AA_SC_AT_120_synth_chords_about_Amin_keyAmin_bpm120_beats16_.flac",channels:[0]);*/
+		b=Buffer.readChannel(s,thisProcess.nowExecutingPath.dirname++"/PMJO_Vocal_Sessions_New_Plan_120_Am_Vocal_Atmosphere_05_keyAmin_bpm120_beats32_.flac",channels:[0]);
+		c=Buffer.readChannel(s,thisProcess.nowExecutingPath.dirname++"/AA_SC_AT_120_synth_chords_about_Amin_keyAmin_bpm120_beats16_.flac",channels:[0]);
 
 
-		b=Buffer.readChannel(s,thisProcess.nowExecutingPath.dirname++"/vocals_bpm100.flac",channels:[0]);
-		c=Buffer.readChannel(s,thisProcess.nowExecutingPath.dirname++"/pad_bpm124_dm.flac",channels:[0]);
+		// b=Buffer.readChannel(s,thisProcess.nowExecutingPath.dirname++"/vocals_bpm100.flac",channels:[0]);
+		// c=Buffer.readChannel(s,thisProcess.nowExecutingPath.dirname++"/pad_bpm124_dm.flac",channels:[0]);
 
 		// b=Buffer.readChannel(s,thisProcess.nowExecutingPath.dirname++"/goalltheway.wav",channels:[0]);
 		// b=Buffer.readChannel(s,thisProcess.nowExecutingPath.dirname++"/c/test1.wav_loop.100.wav",channels:[0]);
