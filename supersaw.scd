@@ -39,10 +39,11 @@ SynthDef("saw",{
 
 	sig = HPF.ar(sig, freq);
 	sig = RLPF.ar(sig,MouseX.kr(10,18000,1),0.707);
-	Out.ar(0,sig);
+	Out.ar(0,sig/4);
 }).add;
 )
 
 (
 Synth.new("saw",[\freq,24.midicps]);
+Synth.new("saw",[\freq,60.midicps]);
 )

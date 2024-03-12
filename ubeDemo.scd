@@ -80,15 +80,15 @@ s.waitForBoot({
 		// add some nice tape compression
 		snd = AnalogTape.ar(snd,0.9,0.8,0.9,2);
 		// add some reverb
-		snd=SelectX.ar(LFNoise2.kr(1/3).range(0.1,0.5),[
+		snd=SelectX.ar(LFNoise2.kr(1/3).range(0.5,0.8),[
 			snd,
 			Fverb.ar(snd[0],snd[1],50,decay:LFNoise2.kr(1/3).range(70,90))
 		]);
-		// add some analog chewing
-		snd=SelectX.ar(LFNoise2.kr(1/3).range(0,1),[
-			snd,
-			AnalogChew.ar(snd);
-		]);
+		// // add some analog chewing
+		// snd=SelectX.ar(LFNoise2.kr(1/3).range(0,1),[
+		// 	snd,
+		// 	AnalogChew.ar(snd);
+		// ]);
 
 		// replace the output with the effected output
 		ReplaceOut.ar(0,snd*Lag.kr(amp));

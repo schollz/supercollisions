@@ -22,7 +22,7 @@ SynthDef.new(\comb_piano, {
 			noise = LFNoise2.ar(noise_hz) * noise_env;
 
 			delaytime = 1.0 / (hz * [tune_up, tune_down]);
-			string = Mix.new(CombL.ar(noise, delaytime, delaytime, string_decay * damp_mul));
+			string = Mix.new(CombC.ar(noise, delaytime, delaytime, string_decay * damp_mul));
 			snd = RLPF.ar(string, lpf_ratio * hz, lpf_rq) * amp;
 			snd = HPF.ar(snd, hpf_hz);
 	        snd = snd * EnvGen.ar(Env.adsr(),gate:gate);
@@ -39,6 +39,7 @@ y=Bus.audio(s,2);
 x=Synth("effects",[\busin,y]);
 )
 
+Synth(\comb_piano,[\hz,320,\amp,1])
 // 3. attach midi device and then run this
 (
 

@@ -24,7 +24,7 @@ c=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/pad_bpm120_beats64.wav")
 (
 x=SynthDef("tapestop",{
 	arg out=0,bufnum=0;
-	var tape_env=EnvGen.kr(Env.new([1,0.047,1],[LFNoise0.kr(1).range(0.75,1.5),LFNoise0.kr(1).range(0.25,0.75)],\exponential,releaseNode:1).poll,MouseX.kr()>0.5); // \sine \lin \exponential
+	var tape_env=EnvGen.kr(Env.new([1,0.047,1],[LFNoise0.kr(1).range(0.75,1.5)*2,LFNoise0.kr(1).range(0.25,0.75)],\exponential,releaseNode:1).poll,MouseX.kr()>0.5); // \sine \lin \exponential
 	var snd=PlayBuf.ar(2,bufnum,tape_env,loop:1);
 	snd=snd*Lag.kr(tape_env>0.04701);
 	snd = snd * EnvGen.ar(Env.new([0,1],[1]));
