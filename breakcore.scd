@@ -1,12 +1,12 @@
 
 (
 b = Buffer.alloc(s,s.sampleRate*4,2);
-c=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/beats16_bpm150_Ultimate_Jack_Loops_014__BPM_150_.wav");
+c=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/drums_bpm120.flac");
 )
 
 (
 x=SynthDef("quantizedbreaks",{
-	arg out=0,amp=0.5,bpmsource=150,bpm=200,t_trig=0,bufnum,bufnumtemp;
+	arg out=0,amp=0.5,bpmsource=120,bpm=200,t_trig=0,bufnum,bufnumtemp;
 	var playbuf,snd,rate,tempotrigger;
 	tempotrigger=Impulse.kr(bpm/60);
 	rate = bpm/bpmsource*BufRateScale.kr(bufnum);
@@ -24,7 +24,7 @@ x=SynthDef("quantizedbreaks",{
 )
 
 
-x.set(\amp,1.0);
+x.set(\amp,2.0);
 x.set(\amp,0.7,\t_trig,1);
-x.set(\bpm,120);
+x.set(\bpm,165);
 s.peakCPU;

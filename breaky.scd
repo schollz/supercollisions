@@ -42,7 +42,7 @@ s.waitForBoot({
 	Routine {
 		s.sync;
 
-		b=Buffer.read(s, thisProcess.nowExecutingPath.dirname++"/HGAT_120_full_drum_loop_granular_key_bpm120_beats16_.flac");
+		b=Buffer.read(s, thisProcess.nowExecutingPath.dirname++"/drums_bpm120.flac");
 		s.sync;
 
 		Synth("0",[
