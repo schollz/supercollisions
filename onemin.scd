@@ -31,9 +31,7 @@ s.waitForBoot({
 
 		snd = SelectX.ar(combdelay,[snd, snd +
 			Pan2.ar(CombN.ar(snd[0], 0.02, Rand(0.01,0.06), Rand(1,2)),-1) +
-			Pan2.ar(CombN.ar(snd[1], 0.02, Rand(0.01,0.06), Rand(1,2)),1) +
-			Pan2.ar(CombN.ar(snd[0], 0.02, Rand(0.005,0.04), Rand(1,3)),-1,0.2) +
-			Pan2.ar(CombN.ar(snd[1], 0.02, Rand(0.005,0.04), Rand(1,3)),1,0.2)
+			Pan2.ar(CombN.ar(snd[1], 0.02, Rand(0.01,0.06), Rand(1,2)),1)
 		]);
 
 		snd = SelectX.ar(gverb,[snd,FreeVerb2.ar(snd[0],snd[1],1,0.9,0.1)]);
@@ -43,9 +41,7 @@ s.waitForBoot({
 
 		snd = Balance2.ar(snd[0],snd[1],pan);
 
-		//snd = snd * MouseY.kr(-96,0).dbamp;
-
-		Out.ar(3, snd);
+		Out.ar(3, snd * 12.neg.dbamp);
 	}).add;
 
 	s.sync;
@@ -53,13 +49,13 @@ s.waitForBoot({
 		arg note=60,detune=0.04,dur=1;
 		var snd;
 		var env;
-		var freq = [note+Rand(detune.neg,detune),note+Rand(detune.neg,detune),note+Rand(detune.neg,detune)].midicps;
+		var freq = [note+Rand(detune.neg,detune),note-12,note+Rand(detune.neg,detune),note+Rand(detune.neg,detune)].midicps;
 		// SinOsc SinOscFB Saw LFTri VarSaw
 		snd = Saw.ar(freq);
-		snd = RLPF.ar(snd, freq);
+		snd = RLPF.ar(snd, freq*LFNoise2.kr(1).range(1,2));
 		snd = Splay.ar(snd);
 		env = EnvGen.ar(Env.new([0,1,1,0],[0.1,dur,0.1]),doneAction:2);
-		Out.ar(0,snd * 24.neg.dbamp * env);
+		Out.ar(0,snd * 16.neg.dbamp * env);
 	}).add;
 	s.sync;
 	SynthDef("main",{
@@ -73,20 +69,20 @@ s.waitForBoot({
 		// rev = FreeVerb2.ar(snd[0],snd[1],0.5,0.9,0.2);
 		rev = Fverb.ar(snd[0],snd[1],200,tail_density: LFNoise2.kr(1/3).range(50,90),decay: LFNoise2.kr(1/3).range(50,70));
 
-		snd = SelectX.ar(MouseY.kr(),[snd,rev]);
+		snd = SelectX.ar(0.8,[snd,rev]);
 
 
 		drumAmp = Amplitude.kr(Mix.new(sndDrums));
-		// snd = snd * Clip.kr(1.0-drumAmp,0.1,1);
-		snd = Compander.ar(snd, sndDrums*MouseX.kr(0,2), 0.05,1,1,0.1);
+		snd = snd * Clip.kr(1.0-drumAmp,0.1,1);
+		snd = Compander.ar(snd, sndDrums*2, 0.05,1,1,0.1);
 
-		snd = snd + (sndDrums*18.neg.dbamp * EnvGen.ar(Env.new([-64,0,0,-64],[8,60-16,8])).dbamp);
+		snd = snd + (sndDrums*0.neg.dbamp*EnvGen.ar(Env.new([-64,0,0,-64],[8,60-16,8])).dbamp);
 
 		snd = RHPF.ar(snd,60);
 
 		snd = AnalogTape.ar(snd,0.8,0.8,0.8,2);
 
-		ReplaceOut.ar(0,snd*24.dbamp);
+		ReplaceOut.ar(0,snd);
 	}).add;
 	s.sync;
 	//Synth("rhubarb",[\note,60,\dur,3]);
@@ -101,31 +97,29 @@ s.waitForBoot({
 
 	Routine{
 		var bpmOriginal = 120;
-		var bpmTarget = 136;
+		var bpmTarget = 180;
 		Synth.tail(s, "main");
-		// Pbind(
-		// 	\instrument, "rhubarb",
-		// 	\detune, Pseq([0.1,0.05,0.02],inf),
-		// 	\note, Pseq([
-		// 		// [62-24,62, 66, 69-12],   // D, 2 beats
-		// 		// [54-24,54, 57, 61],  // F#min, 4 beats
-		// 		// [54, 57, 61, 64], // F#min7, 2 beats
-		// 		// [61, 64, 68-12, 71-12],  // C#min7, 2 beats
-		// 		// [62, 66-12, 69-12],  // D, 4 beats
-		// 		// [62, 66, 69-12],   // D, 2 beats
-		// 		// [54, 57, 61],  // F#min, 4 beats
-		// 		// [54, 57, 61, 64], // F#min7, 2 beats
-		// 		// [61, 64, 68-12, 71-12],  // C#min7, 2 beats
-		// 		// [62, 66-12, 69-12],  // D, 4 beats
-		// 		[60, 64, 67],  // C Major, 4 beats
-		// 		[57, 60, 64],  // A minor, 4 beats
-		// 		[52, 55, 59],  // E minor, 4 beats
-		// 		[53, 57, 60, 65],  // F Major, 4 beats
-		// 	],inf),
-		// 	\dur, Pseq([
-		// 		2,4,2,2,4,2,4,2,2,4,
-		// 	],inf),
-		// ).play;
+		Pbind(
+			\instrument, "rhubarb",
+			\detune, Pseq([0.1,0.05,0.02],inf),
+			\note, Pseq([
+				[60, 64, 67],  // C Major, 4 beats
+				[57, 60, 64],  // A minor, 4 beats
+				[52, 55, 59],  // E minor, 4 beats
+				[53, 57, 60, 65],  // F Major, 4 beats
+				[60, 64, 67,60+12],  // C Major, 4 beats
+				[57, 60, 64,60+14],  // A minor, 4 beats
+				[52, 55, 59,60+16],  // E minor, 4 beats
+				[53, 57, 60, 65,60+12],  // F Major, 4 beats
+				[60, 64, 67,60+11],  // C Major, 4 beats
+				[57, 60, 64,60+12],  // A minor, 4 beats
+				[52, 55, 59,60+11],  // E minor, 4 beats
+				[53, 57, 60, 65,60+16],  // F Major, 4 beats
+			],inf),
+			\dur, Pseq([
+				2,4,2,2,4,2,4,2,2,4,
+			],inf),
+		).play;
 
 		Pbind(
 			\bufmono, ~bmono,

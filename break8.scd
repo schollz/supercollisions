@@ -224,11 +224,14 @@ d.play;
 f.play;
 
 (
-b=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/AA_SC_AT_120_synth_chords_about_Amin_keyAmin_bpm120_beats16_.flac");
-c=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/AC_Bpm120_Pattern_Am_Arp_keyAmin_bpm120_beats16_.flac");
+// b=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/AA_SC_AT_120_synth_chords_about_Amin_keyAmin_bpm120_beats16_.flac");
+// c=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/AC_Bpm120_Pattern_Am_Arp_keyAmin_bpm120_beats16_.flac");
+b=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/drums_bpm120.flac");
+c=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/drums_bpm120.flac");
 d=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/drums_bpm120.flac");
-e=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/PMJO_Vocal_Sessions_New_Plan_120_Am_Vocal_Atmosphere_05_keyAmin_bpm120_beats32_.flac");
-f=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/MDH_120_Amin_BassLoop_11_keyAmin_bpm120_beats16_.flac");
+=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/drums_bpm120.flac");
+//e=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/PMJO_Vocal_Sessions_New_Plan_120_Am_Vocal_Atmosphere_05_keyAmin_bpm120_beats32_.flac");
+// f=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/MDH_120_Amin_BassLoop_11_keyAmin_bpm120_beats16_.flac");
 )
 
 (
@@ -240,34 +243,42 @@ Routine {
 		var beat=msg[3];
 		(beat%64).postln;
 		if (beat%8<1,{
-			Synth("kick",[\amp,1]);
+			Synth("kick",[\amp,0.2]);
 		});
 		if (beat%16<1,{
-			Synth("kick",[\amp,1]);
+			Synth("kick",[\amp,0.2]);
 		});
 		if ((beat%4<1)&&(rrand(0,100)<50),{
-			Synth("kick",[\amp,1]);
+			Synth("kick",[\amp,0.2]);
 		});
 		if (rrand(0,100)<10,{
-			Synth("kick",[\amp,1]);
+			Synth("kick",[\amp,0.2]);
 		});
 		if (beat%64>57,{
-			Synth("kick",[\amp,1]);
+			Synth("kick",[\amp,0.2]);
 		});
 	}, '/beat');
-	x=Synth("metronome",[\out,~met,\bpm_target,120]);
+	x=Synth("metronome",[\out,~met,\bpm_target,136]);
 	// s.record;
-	w=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,b,\bpm_source,120,\bpm_target,120,\amp,1.2,\init_steps,64,\be_normal,10,\reverb,0.7]);
-	v=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,c,\bpm_source,120,\bpm_target,120,\amp,1.0,\init_steps,4]);
-	y=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,d,\bpm_source,120,\bpm_target,120,\amp,1.0]);
-	z=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,e,\bpm_source,120,\bpm_target,120,\amp,1.5,\reverb,0.8,\be_normal,0.5]);
-	u=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,f,\bpm_source,120,\bpm_target,120,\amp,1.0,\be_normal,0.5]);
-
+	w=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,b,\bpm_source,120,\bpm_target,136,\amp,1.0,\init_steps,64,\be_normal,10,\reverb,0.7]);
+	v=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,c,\bpm_source,120,\bpm_target,136,\amp,0.0,\init_steps,4]);
+	y=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,d,\bpm_source,120,\bpm_target,136,\amp,0.0]);
+	z=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,e,\bpm_source,120,\bpm_target,136,\amp,0.0,\reverb,0.8,\be_normal,0.5]);
+	u=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,f,\bpm_source,120,\bpm_target,136,\amp,0.0,\be_normal,0.5]);
 }.play;
 )
-w.set(\reverb,0.1,\amp,1.0)
-z.set(\amp,0.1)
-u.set(\amp,0.0)
+
+v.set(\amp,0.5)
+y.set(\amp,1)
+z.set(\amp,0.5)
+u.set(\amp,0.5)
+
+w.set(\amp,0)
+v.set(\amp,0)
+y.set(\amp,0)
+z.set(\amp,0)
+u.set(\amp,0)
+
 (
 v.set(\amp,0.65);
 y.set(\amp,0.5);

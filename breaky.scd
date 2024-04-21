@@ -7,10 +7,10 @@ s.waitForBoot({
 		var snd,sndD,bass,env=1,retrig=0,startPos=0,trigger=0,phase,rate,jump,do_jump;
 		var retrigs=[0,0,0,1,2,4,8,16,32];
 		rate=BufRateScale.ir(buf)*bpm/bpm_source;
-		retrig=Select.kr(MouseX.kr(0,retrigs.size),retrigs);
+		retrig=Select.kr(LFNoise2.kr(3).range(0,retrigs.size),retrigs);
 		phase=Gate.ar(Phasor.ar(0,rate,0,BufFrames.ir(buf)),retrig<1);
 		jump=Demand.kr(Impulse.kr(bpm/120),0,Drand([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]/16,inf));
-		do_jump = Trig.kr((retrig < 1)*Changed.kr(jump)*(MouseY.kr()>LFNoise0.kr(bpm/120).range(0,1)));
+		do_jump = Trig.kr((retrig < 1)*Changed.kr(jump)*(LFNoise2.kr(3).range(0,1)>LFNoise0.kr(bpm/120).range(0,1)));
 		phase=Select.kr(do_jump,[phase,
 			jump*BufFrames.ir(buf)
 		]);
@@ -18,13 +18,13 @@ s.waitForBoot({
 
 		snd=PlayBuf.ar(2,
 			bufnum:buf,
-			rate:Select.kr(MouseY.kr(0,7),[-1,1,1,1,1,1])*rate,
+			rate:Select.kr(LFNoise2.kr(3).range(0,7),[-1,1,1,1,1,1])*rate,
 			trigger:Impulse.ar(Lag.kr(bpm/60*retrig))+Trig.kr(retrig<1)+do_jump,
 			startPos:phase,
 			loop:1,
 		);
-		//bass=SinOscFB.ar(Demand.kr(Changed.kr(Impulse.kr(bpm/60)),0,Drand([24,25,27,29],inf).midicps),LFNoise2.kr(1/3).range(0,1));
-		//snd = snd + (bass*EnvGen.ar(Env.perc(0.1,0.5),Impulse.kr(bpm/60*2)));
+		// bass=SinOscFB.ar(Demand.kr(Changed.kr(Impulse.kr(bpm/60)),0,Drand([24,25,27,29]+24,inf).midicps),LFNoise2.kr(1/3).range(0,1));
+		// snd = snd + (bass*EnvGen.ar(Env.perc(0.1,0.5),Impulse.kr(bpm/60*2)));
 
 		env=env*EnvGen.ar(Env.new([0,-32,0],[0.01,LFNoise0.kr(1).range(0,1)]),retrig>0).dbamp;
 		snd=Select.ar(retrig>0,[
@@ -33,9 +33,9 @@ s.waitForBoot({
 		]);
 
 		sndD = (snd * 30.dbamp).tanh * -20.dbamp;
-		snd = SelectX.ar(MouseY.kr(),[snd,sndD]);
-
-		Out.ar(out,snd*env);
+		snd = SelectX.ar(LFNoise2.kr(1).range(0,1),[snd,sndD]);
+		snd = AnalogTape.ar(snd,0.8,0.8,0.8);
+		Out.ar(out,snd*env*0.3);
 	}).send(s);
 
 
@@ -48,7 +48,7 @@ s.waitForBoot({
 		Synth("0",[
 			out:0,
 			buf:b,
-			bpm:170,
+			bpm:136,
 			bpm_source:120,
 		]);
 	}.play;

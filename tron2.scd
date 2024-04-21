@@ -5,7 +5,7 @@ s.waitForBoot({
 	Routine{
 		// set the bpm
 		var lastnote=false;
-		var bpm=120;
+		var bpm=136;
 		var scale=Scale.major;
 		var octaves;
 		var notes;
@@ -49,7 +49,7 @@ s.waitForBoot({
 
 			var sig = (center * centerGain.(mix)) + (side * sideGain.(mix));
 			sig = HPF.ar(sig ! 2, freq);
-			sig = MoogLadder.ar(sig,freq*lpf*3);
+			sig = MoogLadder.ar(sig,freq*lpf*2);
 			sig = Pan2.ar(sig);
 			Out.ar(0,sig/5*EnvGen.ar(Env.perc(0.0,1.5*amp),doneAction:2)*amp);
 		}).send(s);
@@ -61,7 +61,7 @@ s.waitForBoot({
 			snd=SelectX.ar(LFNoise2.kr(1/3).range(0.0,0.001),[snd,sndR]);
 			snd=AnalogTape.ar(snd,0.9,0.9,0.7,2);
 			snd=BPeakEQ.ar(snd,32.midicps,6);
-			ReplaceOut.ar(0,snd*0.25);
+			ReplaceOut.ar(0,snd*0.5);
 		}).send(s);
 
 		SynthDef("sine",{
@@ -92,17 +92,17 @@ s.waitForBoot({
 		// notes=notes++[5];
 
 		// define 65 notes
-		notes=[-2,0,2,-2,0,2,-2,0,-2,0,2,-2,0,2,-2,0];
-		notes=notes++[-2,0,3,-2,0,3,-2,0,-2,0,3,-2,0,3,-2,0];
-		notes=notes++[-3,-1,2,-3,-1,2,-3,-1,-3,-1,2,-3,-1,2,-3,-1];
-		notes=notes++[-3,-1,1,-3,-1,1,-3,-1,-3,-1,1,-3,-1,1,-3,-1];
-		notes=notes++[3]; // 65th note is key
+		// notes=[-2,0,2,-2,0,2,-2,0,-2,0,2,-2,0,2,-2,0];
+		// notes=notes++[-2,0,3,-2,0,3,-2,0,-2,0,3,-2,0,3,-2,0];
+		// notes=notes++[-3,-1,2,-3,-1,2,-3,-1,-3,-1,2,-3,-1,2,-3,-1];
+		// notes=notes++[-3,-1,1,-3,-1,1,-3,-1,-3,-1,1,-3,-1,1,-3,-1];
+		// notes=notes++[3]; // 65th note is key
 		scale=[0,2,4,5,7,9,11];
 		octaves=[12,0,12,12,12,0,12,0];
 		octaves=[0,0,0,12,12,12,24,24];
 		syncopation=[1,0.5,1,0.5,0.5,1,0.5,1];
 		syncopation=[1,1.5,0.2,0.5,0.5,1,0.5,1];
-		syncopation=[1,1.1,0.6];
+		syncopation=[1,1.1,0.5];
 		// syncopation=[1,1,0.4,1,1,0.4,1,0.4,1,0.4,1,0.4];
 		lastnote=false;
 		t.schedAbs(0, { arg i, sec;
@@ -118,7 +118,7 @@ s.waitForBoot({
 			// });
 			if ((100.rand<100)||(lastnote==false),{
 				lastnote=true;
-				Synth("jp",[\freq,note.midicps,\mix,(40+10.rand)/100,\detune,(25+30.rand)/100,\amp,accent,\lpf,18-(accent*12)]);
+				Synth("jp",[\freq,(note+2).midicps,\mix,(40+10.rand)/100,\detune,(20+30.rand)/100,\amp,accent,\lpf,18-(accent*12)]);
 				},{
 					lastnote=false;
 			});
@@ -130,4 +130,4 @@ s.waitForBoot({
 )
 )
 
-t = TempoClock(15*110/120);
+t = TempoClock(15*136/120);
