@@ -7,7 +7,7 @@ SynthDef("metronome",{
 	Out.ar(out,mainPhase);
 }).add;
 SynthDef("op",{
-	arg out=0,amp=1.0,busin,bufnum,bpm_source=120,bpm_target=140,t_trig=0,rate=1,xfade=0.005,slice_factor=1,compression=0.3,init_steps=4,be_normal=1,reverb=0;
+	arg out=0,amp=1.0,busin,bufnum,bpm_source=120,bpm_target=140,t_trig=0,rate=1,xfade=0.01,slice_factor=1,compression=0.3,init_steps=4,be_normal=1,reverb=0,pan=0,doDecimate=0;
 	var sig,snd,snd2,crossfade,aOrB,resetPos,retriggerNum,retriggerTrig,retriggerRate,doGate;
 	var posA,posB;
 	var beatsInPhrase=32;
@@ -32,10 +32,10 @@ SynthDef("op",{
 		TRand.kr(0,slicesPlus,changeBeatStart).floor,
 		TRand.kr(0,slicesPlus,changeBeatStart).floor,
 	];
-	var combdelay = Demand.kr(changeBeat1,0,Drand([0,0,0,0,0,0,0,0,0,1],inf));
+	var combdelay = Demand.kr(changeBeat1,0,Drand([0,0,0,0,0,0,0,0,0,0,0,0,1],inf));
 	var gverb = Demand.kr(changeBeat1,0,Drand([0,0,0,0,0,0,0,0,0,0,1],inf));
 
-	rate = rate * Demand.kr(changeBeat1,0,Drand([1,1,1,1,1,-1],inf));
+	rate = rate * Demand.kr(changeBeat1,0,Drand([1,1,1,1,1,1,-1],inf));
 	rate = rate*BufRateScale.ir(bufnum)*bpm_target/bpm_source;
 
 
@@ -102,13 +102,13 @@ SynthDef("op",{
 
 	posA=Phasor.ar(
 		trig:(1-aOrB),
-		rate:rate.abs,
+		rate:rate,
 		end:BufFrames.ir(bufnum),
 		resetPos:Latch.kr(resetPos,1-aOrB)
 	);
 	posB=Phasor.ar(
 		trig:aOrB,
-		rate:rate.abs,
+		rate:rate,
 		end:BufFrames.ir(bufnum),
 		resetPos:Latch.kr(resetPos,aOrB)
 	);
@@ -128,34 +128,26 @@ SynthDef("op",{
 		(Trig.kr(TRand.kr(0,1,changeBeat2)>0.95,secondsPerSlice*2))
 	).midicps,0.707);
 	// snd=snd*EnvGen.kr(Env.new([1,0,1],[seconds/slices/4,seconds/slices*2]),numBeat%beatsInPhrase>(beatsInPhrase-5));
-	// doGate=Changed.kr(changeBeat1)*LFNoise0.kr(1)>0.9;
-	// snd=snd*EnvGen.kr(Env.new([1,1,0,1],[seconds/slices*0.5,seconds/slices*0.5,seconds/slices]),doGate);
+
+	doGate=Changed.kr(changeBeat1)*LFNoise0.kr(1)>0.9;
+	snd=snd*EnvGen.kr(Env.new([1,1,0,1],[seconds/slices*0.5,seconds/slices*0.5,seconds/slices]),doGate);
+
 	snd=Compander.ar(snd,snd,1,1-compression,1/4,0.01,0.1);
-	snd=SelectX.ar(Lag.kr(TRand.kr(0,1,changeBeat4)>0.8),[snd,Decimator.ar(snd,6000,6)]);
+	snd=SelectX.ar(Lag.kr(TRand.kr(0,1,changeBeat4)>0.8)*doDecimate,[snd,Decimator.ar(snd,6000,6)]);
 
 	// add in gating??
 
 	//snd=Pan2.ar(snd,SinOsc.kr(bpm_target/60));
 	snd=RHPF.ar(snd,60,0.707);
 
-	sig = snd/10;
-	sig = DelayN.ar(sig, 0.03, 0.03);
-	sig = CombN.ar(sig, 0.1, {Rand(0.01,0.099)}!32, 4);
-	sig = SplayAz.ar(2, sig);
-	sig = LPF.ar(sig, 1500);
-	5.do{sig = AllpassN.ar(sig, 0.1, {Rand(0.01,0.099)}!2, 3)};
-	sig = LPF.ar(sig, 1500);
-	sig = LeakDC.ar(sig);
-
-	snd=SelectX.ar(reverb,[snd,sig]);
-
-	snd = SelectX.ar(combdelay,[snd, snd +
-		Pan2.ar(CombN.ar(snd[0], 0.02, Rand(0.01,0.06), Rand(1,2)),-1) +
-		Pan2.ar(CombN.ar(snd[1], 0.02, Rand(0.01,0.06), Rand(1,2)),1)
+	snd = SelectX.ar(Lag.kr(combdelay),[snd, (0.5*snd)+
+		Pan2.ar(CombN.ar(snd[0], 0.02, Rand(0.01,0.06), Rand(1,2)),-1,0.9) +
+		Pan2.ar(CombN.ar(snd[1], 0.02, Rand(0.01,0.06), Rand(1,2)),1,0.9)
 	]);
 
-	snd = SelectX.ar(gverb,[snd,FreeVerb2.ar(snd[0],snd[1],1,0.9,0.1)]);
+	snd = SelectX.ar(Lag.kr(gverb),[snd,FreeVerb2.ar(snd[0],snd[1],1,0.9,0.1)]);
 
+	snd = Balance2.ar(snd[0],snd[1],pan);
 
 	Out.ar(out,snd*Lag.kr(amp,2)/2);
 }).add;
@@ -167,144 +159,76 @@ SynthDef("kick", { |basefreq = 40, ratio = 6, sweeptime = 0.05, preamp = 1, amp 
 	sig = (sig*amp).tanh!2;
 	Out.ar(out,sig);
 }).add;
-)
+SynthDef("out",{
+	arg busin, vol=1,bpm_target;
+	var rev;
+	var mainPhase=In.ar(busin);
+	var start=Impulse.kr(0);
+	var numBeat=(bpm_target/60*A2K.kr(mainPhase)).floor;
+	var changeBeat1=start+Changed.kr(numBeat);
+	var changeBeatEighth=start+Changed.kr((bpm_target/60*A2K.kr(mainPhase)*2).floor);
+	var changeBeat2=start+Changed.kr(numBeat%2<1);
+	var changeBeat4=start+Changed.kr(numBeat%4<1);
+	var changeBeat16=start+Changed.kr(numBeat%16<1);
 
+	var snd  = In.ar(0,2)*Lag.kr(vol,1);
+	var sndrev = snd * Lag.kr(Demand.kr(changeBeat1,0,Drand([0,0,0,0,0,0,0,0,0,1],inf)),2);
+	rev = Fverb.ar(sndrev[0],sndrev[1],200,tail_density: LFNoise2.kr(1/3).range(50,90),decay: LFNoise2.kr(1/3).range(50,70));
 
+	snd = SelectX.ar(0.5,[snd,rev]);
 
-Synth("op",[\out,0,\bufnum,b,\bpm_source,120,\bpm_target,136,\amp,1,\init_steps,0,\be_normal,1]);
+	snd = RHPF.ar(snd,60,0.303);
 
-b=Buffer.read(s,"/home/zns/Documents/supercollisions/120/Dennis Coffey - Ride Sally Ride (part1)__beats16_bpm120.wav");
-b.play
+	snd = AnalogTape.ar(snd,0.8,0.8,0.8,2);
 
-b=Buffer.read(s,"/home/zns/Documents/supercollisions/HGAT_120_full_drum_loop_granular_key_bpm120_beats16_.flac");
-b=Buffer.read(s,"/home/zns/Documents/supercollisions/row1/HGAT_120_full_drum_loop_granular_key_bpm120_beats16_.flac");
+	ReplaceOut.ar(0,snd);
+}).add;
 
-
-
-b=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/AC_Bpm120_Pattern_Am_Arp_keyAmin_bpm120_beats16_.flac");
-
-
-(
-w = Window.new("soundfile test", Rect(200, 300, 740, 300));
-a = SoundFileView.new(w, Rect(20,20, 700, 260));
-
-f = SoundFile.new;
-f.openRead(thisProcess.nowExecutingPath.dirname++"/amenbreak_bpm136.wav");
-
-a.soundfile = f;
-a.read(0, f.numFrames);
-
-a.timeCursorOn = false;
-a.timeCursorColor = Color.red;
-a.timeCursorPosition = 2050;
-a.drawsWaveForm = true;
-a.gridOn = false;
-a.gridResolution = 0.2;
-
-w.front;
-)
-
-a.setSelectionColor(0, Color.red);  // set...( index, value )
-a.setSelectionStart(0, 0);
-a.setSelectionSize(0, b.numFrames/64);
-
-
-b.play
-
-c=Buffer.read(s,"/home/zns/Documents/supercollisions/136/James Brown - Cold Sweat Live (part7)__beats8_bpm136.wav");
-
-(
-b=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/pad_bpm120_beats64.wav");
-c=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/HGAT_120_full_drum_loop_granular_key_bpm120_beats16_.flac");
-d=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/fh_bs120_odybass_Am_keyAmin_bpm120_beats16_.flac");
-e=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/brake_arp_keyAmin_bpm120_beats8_.flac");
-f=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/row1/AC_Bpm120_Pattern_Am_Arp_keyAmin_bpm120_beats16_.flac");
-
-)
-(
-b=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/SEB_120_Am_PadLoop_05_keyAmin_bpm120_beats32_.flac");
-c=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/shs_roam_breaks_loop_120_surge_full_key_bpm120_beats32_.flac");
-d=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/fh_bs120_odybass_Am_keyAmin_bpm120_beats16_.flac");
-e=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/016_Pad_Strings__Loop_Seamlessly__A_Minor_120bpm_-_ORGANICHOUSE_Zenhiser_keyAmin_bpm120_beats64_.flac");
-f=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/rw_insp120_usa_key_Am_keyAmin_bpm120_beats16_.flac");
-)
-b.play
-c.play
-d.play
-e.play
-d.play;
-f.play;
-
-(
-// b=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/AA_SC_AT_120_synth_chords_about_Amin_keyAmin_bpm120_beats16_.flac");
-// c=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/AC_Bpm120_Pattern_Am_Arp_keyAmin_bpm120_beats16_.flac");
-b=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/drums_bpm120.flac");
-// c=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/drums_bpm120.flac");
-// d=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/drums_bpm120.flac");
-c=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/amen_beats8_bpm172.wav");
-//e=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/PMJO_Vocal_Sessions_New_Plan_120_Am_Vocal_Atmosphere_05_keyAmin_bpm120_beats32_.flac");
-// f=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/MDH_120_Amin_BassLoop_11_keyAmin_bpm120_beats16_.flac");
-)
-
-(
+b=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/amen_beats8_bpm172.wav");
+c=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/amen_5c2d11c8_beats16_bpm170.flac");
+//d=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/fss_ecv2_138_vocal_adlib_wet_soaring_arpeggio_high_Cm_keyCmin_bpm138_beats16_.flac");
+d=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/DS_VPDH_126_piano_loop_arp_heaven_Cm_keyCmin_bpm126_beats32_.flac");
 
 o.free;
 Routine {
+	s.record;
+	1.wait;
+	~bpm_target = 165;
 	~met=Bus.audio(s,1);
+	x=Synth.head(s,"metronome",[\out,~met,\bpm_target,~bpm_target]);
+	y=Synth.tail(s,"out",[\busin,~met,\bpm_target,~bpm_target]);
+
 	o = OSCFunc({ |msg|
 		var beat=msg[3];
-		(beat%64).postln;
-		if (beat%8<1,{
-			Synth("kick",[\amp,0.2]);
-		});
-		if (beat%16<1,{
-			Synth("kick",[\amp,0.2]);
-		});
-		if ((beat%4<1)&&(rrand(0,100)<50),{
-			Synth("kick",[\amp,0.2]);
-		});
-		if (rrand(0,100)<10,{
-			Synth("kick",[\amp,0.2]);
-		});
-		if (beat%64>57,{
-			Synth("kick",[\amp,0.2]);
+		// (beat%64).postln;
+		if (beat>31,{
+			if (beat%8<1,{
+				Synth.head(s,"kick",[\amp,1]);
+			});
+			if (beat%16<1,{
+				Synth.head(s,"kick",[\amp,1]);
+			});
+			if ((beat%4<1)&&(rrand(0,100)<50),{
+				Synth.head(s,"kick",[\amp,0.5]);
+			});
+			if (rrand(0,100)<10,{
+				Synth.head(s,"kick",[\amp,1.0]);
+			});
+			if (beat%64>57,{
+				Synth.head(s,"kick",[\amp,1.2]);
+			});
 		});
 	}, '/beat');
-	x=Synth("metronome",[\out,~met,\bpm_target,136]);
-	// s.record;
-	w=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,b,\bpm_source,120,\bpm_target,136,\amp,1.0,\init_steps,64,\be_normal,10,\reverb,0.7]);
-	v=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,c,\bpm_source,172,\bpm_target,136,\amp,1.0,\init_steps,4]);
-	y=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,d,\bpm_source,120,\bpm_target,136,\amp,0.0]);
-	z=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,e,\bpm_source,120,\bpm_target,136,\amp,0.0,\reverb,0.8,\be_normal,0.5]);
-	u=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,f,\bpm_source,120,\bpm_target,136,\amp,0.0,\be_normal,0.5]);
+	Routine{
+		(60/~bpm_target*(32*5)).wait;
+		y.set(\vol,0);
+	}.play;
+	Synth.after(x,"op",[\out,0,\busin,~met,\doDecimate,0,\bufnum,d,\bpm_source,126*2,\bpm_target,~bpm_target,\amp,1.0,\pan,0.0]);
+	(60/~bpm_target*32).wait;
+	Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,c,\bpm_source,170,\bpm_target,~bpm_target,\amp,0.6,\pan,0.0]);
+	(60/~bpm_target*32).wait;
+	Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,b,\bpm_source,172,\bpm_target,~bpm_target,\amp,0.6,\reverb,0.2,\pan,0]);
 }.play;
 )
 
-v.set(\amp,0.5)
-y.set(\amp,1)
-z.set(\amp,0.5)
-u.set(\amp,0.5)
 
-w.set(\amp,0)
-v.set(\amp,0)
-y.set(\amp,0)
-z.set(\amp,0)
-u.set(\amp,0)
-
-(
-v.set(\amp,0.65);
-y.set(\amp,0.5);
-z.set(\amp,0.2 );
-)
-(
-x.set(\amp,0.0);
-y.set(\amp,0.2);
-z.set(\amp,0);
-)
-
-x.set(\be_normal,0)
-x.set(\be_normal,1)
-z.set(\amp,0.0)
-
-x=Synth("op",[\out,0,\bufnum,c,\bpm_source,90,\bpm_target,90,\amp,0.5,\slices,1,\init_steps,16]);
-x.set(\slices,16,\init_steps,8)
