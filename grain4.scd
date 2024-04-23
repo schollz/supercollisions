@@ -2,10 +2,12 @@
 s.waitForBoot({
 	Routine{
 		SynthDef("fx",{
+			var rev;
 			var snd=In.ar(0,2);
-			var rev = Fverb.ar(snd[0],snd[1],
+			snd = AnalogTape.ar(snd,0.9,0.9,0.7,2);
+			rev = Fverb.ar(snd[0],snd[1],
 				predelay:50,
-				tail_density:LFNoise2.kr(1/3).range(50,90),
+				tail_density: LFNoise2.kr(1/3).range(50,90),
 				decay:LFNoise2.kr(1/3).range(50,90)
 			);
 			snd = SelectX.ar(LFNoise2.kr(1/3).range(0.5,0.7),[snd,rev]);
@@ -15,10 +17,10 @@ s.waitForBoot({
 		SynthDef("grain",{
 			arg buf,freq=1,move=1,pos=0,t_jump=1,db=0,num=0,dir=1;
 			var snd,phase,rate,dur;
-			/*			rate = MouseX.kr(2.neg,2);
-			freq = freq * MouseY.kr(0.1,10);*/
-			rate = dir*EnvGen.kr(Env.new([0.1,1,-1,0.1],[5,3,1]),Impulse.kr(1/9));
-			freq = freq * EnvGen.kr(Env.new([0.1,10,2,0.1],[10,3,1]),Impulse.kr(1/13));
+			rate = MouseX.kr(2.neg,2);
+			freq = freq * MouseY.kr(0.1,10);
+			// rate = dir*EnvGen.kr(Env.new([0.1,1,-1,0.1],[5,3,1]),Impulse.kr(1/9));
+			// freq = freq * EnvGen.kr(Env.new([0.1,10,2,0.1],[10,3,1]),Impulse.kr(1/13));
 			dur = EnvGen.kr(Env.new([0.5,1.5,6,0.5],[3,8,1]),Impulse.kr(1/12));
 			phase = Phasor.ar(
 				trig:t_jump+TDelay.kr(Impulse.kr(0),0.01),

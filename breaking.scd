@@ -147,7 +147,12 @@ SynthDef("op",{
 
 	snd = SelectX.ar(Lag.kr(gverb),[snd,FreeVerb2.ar(snd[0],snd[1],1,0.9,0.1)]);
 
-	snd = Balance2.ar(snd[0],snd[1],pan);
+	snd = Balance2.ar(snd[0],snd[1],pan+(Demand.kr(changeBeat1,0,
+		Drand([0,0,0,0,0,0,0,0,1,1],inf)
+	)*Demand.kr(changeBeat1,0,
+		Drand([0.05,0.01,0,0,0,0,0.1,0.2,0.3,0.4,0.5,0,0,0,0,0,1],inf)
+	)
+	));
 
 	Out.ar(out,snd*Lag.kr(amp,2)/2);
 }).add;
@@ -187,13 +192,14 @@ SynthDef("out",{
 b=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/amen_beats8_bpm172.wav");
 c=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/amen_5c2d11c8_beats16_bpm170.flac");
 //d=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/fss_ecv2_138_vocal_adlib_wet_soaring_arpeggio_high_Cm_keyCmin_bpm138_beats16_.flac");
-d=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/DS_VPDH_126_piano_loop_arp_heaven_Cm_keyCmin_bpm126_beats32_.flac");
+d=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/nw_pr_122_kit_pluck_loop_septon_Cmin_key_bpm200_122_beats32_.flac");
+e=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/plx_stp_132_synth_loop_waves_Cmin_key_bpm200_132_beats32_.flac");
+f=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/RHC_120_vocal_loop_oldsoul_Cmin_key_bpm200_120_beats8_.flac");
 
 o.free;
 Routine {
-	s.record;
-	1.wait;
-	~bpm_target = 165;
+	s.sync;
+	~bpm_target = 180;
 	~met=Bus.audio(s,1);
 	x=Synth.head(s,"metronome",[\out,~met,\bpm_target,~bpm_target]);
 	y=Synth.tail(s,"out",[\busin,~met,\bpm_target,~bpm_target]);
@@ -203,19 +209,19 @@ Routine {
 		// (beat%64).postln;
 		if (beat>31,{
 			if (beat%8<1,{
-				Synth.head(s,"kick",[\amp,1]);
+				Synth.head(s,"kick",[\amp,0.7]);
 			});
 			if (beat%16<1,{
-				Synth.head(s,"kick",[\amp,1]);
+				Synth.head(s,"kick",[\amp,0.6]);
 			});
 			if ((beat%4<1)&&(rrand(0,100)<50),{
-				Synth.head(s,"kick",[\amp,0.5]);
+				Synth.head(s,"kick",[\amp,0.7]);
 			});
 			if (rrand(0,100)<10,{
-				Synth.head(s,"kick",[\amp,1.0]);
+				Synth.head(s,"kick",[\amp,0.5]);
 			});
 			if (beat%64>57,{
-				Synth.head(s,"kick",[\amp,1.2]);
+				Synth.head(s,"kick",[\amp,0.7]);
 			});
 		});
 	}, '/beat');
@@ -223,11 +229,17 @@ Routine {
 		(60/~bpm_target*(32*5)).wait;
 		y.set(\vol,0);
 	}.play;
-	Synth.after(x,"op",[\out,0,\busin,~met,\doDecimate,0,\bufnum,d,\bpm_source,126*2,\bpm_target,~bpm_target,\amp,1.0,\pan,0.0]);
+	~arp=Synth.after(x,"op",[\out,0,\busin,~met,\doDecimate,0,\bufnum,d,\bpm_source,200,\bpm_target,~bpm_target,\amp,0.9,\pan,0.0]);
 	(60/~bpm_target*32).wait;
-	Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,c,\bpm_source,170,\bpm_target,~bpm_target,\amp,0.6,\pan,0.0]);
+	~drums1=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,c,\bpm_source,170,\bpm_target,~bpm_target,\amp,0.75,\pan,0.0]);
+	~vocals=Synth.after(x,"op",[\out,0,\busin,~met,\doDecimate,0,\bufnum,f,\bpm_source,100,\bpm_target,~bpm_target,\amp,0.8,\pan,0.0]);
 	(60/~bpm_target*32).wait;
-	Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,b,\bpm_source,172,\bpm_target,~bpm_target,\amp,0.6,\reverb,0.2,\pan,0]);
+	~vocals.set(\amp,0);
+	~arp.set(\amp,0.5);
+	~drums1.set(\pan,-0.1);
+	~drums1.set(\amp,0.85);
+	Synth.after(x,"op",[\out,0,\busin,~met,\doDecimate,0,\bufnum,e,\bpm_source,200,\bpm_target,~bpm_target,\amp,0.85,\pan,0.0]);
+	Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,b,\bpm_source,172,\bpm_target,~bpm_target,\amp,0.9,\reverb,0.2,\pan,0.1]);
 }.play;
 )
 
