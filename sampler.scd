@@ -18,8 +18,6 @@ s.waitForBoot({
 			var retrigTrig, retrigCount, retrigCountFeedback, retrigMultiplier = 1;
 			var frames=BufFrames.ir(buf);
 			var seconds=BufDur.ir(buf)*bpmSource/bpmTarget;
-			var mainPhase=Phasor.ar(1,1/s.sampleRate,0,1000000);
-			var eigthBeat=(mainPhase*bpmTarget/60).floor.poll;
 
 			// Calculate rate
 			rate = rate*BufRateScale.ir(buf)*bpmTarget/bpmSource;
@@ -33,7 +31,7 @@ s.waitForBoot({
 				retrigIncrease > 0, 
 				[1, retrigIncrease / 10 * (retrigCountFeedback.sqrt + 1)]  
 			);
-			retrigTrig = SinOsc.ar(bpmTarget/60*retrigRate*retrigMultiplier);
+			retrigTrig = SinOsc.ar(XLine.ar(1,30,10) * bpmTarget/60*retrigRate*retrigMultiplier);
 			retrigCount = PulseCount.ar(retrigTrig).poll;
 
 			// Determine whether to toggle playback
@@ -116,7 +114,7 @@ s.waitForBoot({
 				bpmSource: 170,
 				bpmTarget: 185,
 				retrigNum: 32,
-				retrigRate: 0.5,
+				retrigRate: 1,
 				pos:0.0,
 			]);
 
