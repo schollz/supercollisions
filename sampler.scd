@@ -5,19 +5,31 @@ s.waitForBoot({
 			arg buf,outDry=0,outWet=0,t_trig,dryWet=0.0,
 			gate = 1.0,
 			rate = 1.0,
-			pos=0.0,
 			dbVolume=0.0,
 			xfade=0.005,
 			bpmSource=120, bpmTarget=120,
 			attack=0.01,
 			release=0.01,
-			retrigNum=0,retrigRate=1,retrigIncrease=0;
+			retrigNum=0,retrigRate=1,retrigIncrease=0,
+			sliceAttack = 0.01,
+			sliceDuration = 0.5,
+			sliceRelease = 0.01,
+			sliceNum = 0,
+			sliceCount = 32; // number of slices to cut the sample into
 			var snd,sndA,sndB,crossfade,aOrB;
 			var sndWet, sndDry;
 			var posA,posB;
 			var retrigTrig, retrigCount, retrigCountFeedback, retrigMultiplier = 1;
 			var frames=BufFrames.ir(buf);
 			var seconds=BufDur.ir(buf)*bpmSource/bpmTarget;
+			var pos = 0.0;
+			var sliceTrigger = t_trig;
+			sliceNum = sliceNum.mod(sliceCount);
+			// convert slice durations to seconds
+			sliceAttack = sliceAttack * seconds / sliceCount;
+			sliceDuration = sliceDuration * seconds / sliceCount;
+			sliceRelease = sliceRelease * seconds / sliceCount;
+			pos = sliceNum / sliceCount;
 
 			// Calculate rate
 			rate = rate*BufRateScale.ir(buf)*bpmTarget/bpmSource;
@@ -27,15 +39,19 @@ s.waitForBoot({
 			retrigCountFeedback = LocalIn.ar(1);
 
 			// Calculate retrigger rate and count
-			retrigMultiplier = Select.kr(
+			retrigMultiplier = Select.ar(
 				retrigIncrease > 0, 
-				[1, retrigIncrease / 10 * (retrigCountFeedback.sqrt + 1)]  
+				[
+					DC.ar(1),                                   
+					retrigIncrease / 10 * (retrigCountFeedback.sqrt + 1)  
+				]
 			);
-			retrigTrig = SinOsc.ar(XLine.ar(1,30,10) * bpmTarget/60*retrigRate*retrigMultiplier);
+			retrigTrig = Impulse.ar(XLine.ar(1,64,5) * bpmTarget/60*retrigRate*retrigMultiplier);
 			retrigCount = PulseCount.ar(retrigTrig).poll;
+			sliceTrigger = sliceTrigger + (retrigTrig*(retrigCount<retrigNum));
 
 			// Determine whether to toggle playback
-			aOrB=ToggleFF.kr(t_trig+(retrigTrig*(retrigCount<retrigNum)));
+			aOrB=ToggleFF.ar(sliceTrigger);
 			crossfade=VarLag.ar(K2A.ar(aOrB),xfade,warp:\sine);
 
 			posA=Phasor.ar(
@@ -61,8 +77,14 @@ s.waitForBoot({
 			)*(1-crossfade));
 
 			snd = snd * Lag.kr(dbVolume.dbamp,2);
+
+			// full envelope
 			snd = snd * EnvGen.ar(Env.adsr(attack,0.0,1.0,release),gate,doneAction:2);
-			dryWet = Lag.kr(dryWet,2);
+
+			// slice envelope
+			snd = snd * EnvGen.ar(Env.new([0,1,1,0],[sliceAttack,sliceDuration,sliceRelease],[-4,4]), sliceTrigger);
+
+			dryWet = Lag.kr(dryWet, 2);
 
 			// Feedback pieces
 			LocalOut.ar(retrigCount);
@@ -80,15 +102,13 @@ s.waitForBoot({
 			snd = SelectX.ar(
 				reverbAmt,[
 					sndDry,
-					Fverb.ar(sndWet[0],sndWet[1],200,tail_density: LFNoise2.kr(1/3).range(50,90),decay: LFNoise2.kr(1/3).range(50,70))
+					Fverb.ar(sndWet[0],sndWet[1],200,tail_density: LFNoise2.ar(1/3).range(50,90),decay: LFNoise2.ar(1/3).range(50,70))
 				]
 			);
 
 			snd = RHPF.ar(snd,60,0.303);
-
 			snd = AnalogTape.ar(snd,0.8,0.8,0.8,2);
-
-			ReplaceOut.ar(0,snd);
+			ReplaceOut.ar(0,snd*0.1);
 		}).send(s);
 
 		s.sync;
