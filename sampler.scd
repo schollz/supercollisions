@@ -2,7 +2,7 @@
 s.waitForBoot({
 	Routine{
 		SynthDef("sampler",{
-			arg buf,outDry=0,outWet=0,t_trig,dryWet=0.0,
+			arg buf,outDry=0,outWet=0,t_trig=1,dryWet=0.0,
 			gate = 1.0,
 			rate = 1.0,
 			dbVolume=0.0,
@@ -10,45 +10,44 @@ s.waitForBoot({
 			bpmSource=120, bpmTarget=120,
 			attack=0.01,
 			release=0.01,
-			retrigNum=0,retrigRate=1,retrigIncrease=0,
-			sliceAttack = 0.01,
-			sliceDuration = 0.5,
-			sliceRelease = 0.01,
+			// retriggering
+			retrigNumTotal=0,
+			retrigRateChangeBeats=1,
+			retrigRateStart=1,
+			retrigRateEnd=0,
+			sliceAttackBeats = 0.01,
+			sliceDurationBeats = 1,
+			sliceReleaseBeats = 0.01,
 			sliceNum = 0,
 			sliceCount = 32; // number of slices to cut the sample into
 			var snd,sndA,sndB,crossfade,aOrB;
 			var sndWet, sndDry;
 			var posA,posB;
-			var retrigTrig, retrigCount, retrigCountFeedback, retrigMultiplier = 1;
+			var retrigTrig, retrigCount;
 			var frames=BufFrames.ir(buf);
 			var seconds=BufDur.ir(buf)*bpmSource/bpmTarget;
 			var pos = 0.0;
 			var sliceTrigger = t_trig;
+			var beatDuration = 60 / bpmTarget;
+
 			sliceNum = sliceNum.mod(sliceCount);
-			// convert slice durations to seconds
-			sliceAttack = sliceAttack * seconds / sliceCount;
-			sliceDuration = sliceDuration * seconds / sliceCount;
-			sliceRelease = sliceRelease * seconds / sliceCount;
+			// convert slice beat to seconds
 			pos = sliceNum / sliceCount;
+
+			// make sure retrigRateEnd is at least retrigRateStart
+			retrigRateEnd = Select.kr(retrigRateEnd < retrigRateStart, [retrigRateEnd, retrigRateStart]);
+
+			// if sliceDurationBeats = 0, make it infinite
+			sliceDurationBeats = Select.kr(sliceDurationBeats < 0.001, [sliceDurationBeats, 1e3]);
 
 			// Calculate rate
 			rate = rate*BufRateScale.ir(buf)*bpmTarget/bpmSource;
 
 
-			// Feedback pieces
-			retrigCountFeedback = LocalIn.ar(1);
-
-			// Calculate retrigger rate and count
-			retrigMultiplier = Select.ar(
-				retrigIncrease > 0, 
-				[
-					DC.ar(1),                                   
-					retrigIncrease / 10 * (retrigCountFeedback.sqrt + 1)  
-				]
-			);
-			retrigTrig = Impulse.ar(XLine.ar(1,64,5) * bpmTarget/60*retrigRate*retrigMultiplier);
-			retrigCount = PulseCount.ar(retrigTrig).poll;
-			sliceTrigger = sliceTrigger + (retrigTrig*(retrigCount<retrigNum));
+			retrigTrig = Impulse.ar(XLine.ar(retrigRateStart,retrigRateEnd,beatDuration*retrigRateChangeBeats) / beatDuration);
+			retrigCount = PulseCount.ar(retrigTrig);
+			[retrigCount,retrigNumTotal].poll;
+			sliceTrigger = sliceTrigger + (retrigTrig*(retrigCount<retrigNumTotal));
 
 			// Determine whether to toggle playback
 			aOrB=ToggleFF.ar(sliceTrigger);
@@ -82,12 +81,10 @@ s.waitForBoot({
 			snd = snd * EnvGen.ar(Env.adsr(attack,0.0,1.0,release),gate,doneAction:2);
 
 			// slice envelope
-			snd = snd * EnvGen.ar(Env.new([0,1,1,0],[sliceAttack,sliceDuration,sliceRelease],[-4,4]), sliceTrigger);
+			snd = snd * EnvGen.ar(Env.new([0,1,1,0],[sliceAttackBeats,sliceDurationBeats,sliceReleaseBeats]*beatDuration,[-4,4]), sliceTrigger);
 
 			dryWet = Lag.kr(dryWet, 2);
 
-			// Feedback pieces
-			LocalOut.ar(retrigCount);
 
 			Out.ar(outDry,snd*(1-dryWet));
 			Out.ar(outWet,snd*dryWet);
@@ -133,8 +130,11 @@ s.waitForBoot({
 				outWet: ~busWet,
 				bpmSource: 170,
 				bpmTarget: 185,
-				retrigNum: 32,
-				retrigRate: 1,
+				retrigRateStart: 0.25,
+				retrigRateEnd: 32,
+				retrigRateChangeBeats: 16,
+				retrigNumTotal: 32,
+				sliceDurationBeats: 4,
 				pos:0.0,
 			]);
 
