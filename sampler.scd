@@ -43,11 +43,16 @@ s.waitForBoot({
 			// Calculate rate
 			rate = rate*BufRateScale.ir(buf)*bpmTarget/bpmSource;
 
-
+			// Calculate retriggers
 			retrigTrig = Impulse.ar(XLine.ar(retrigRateStart,retrigRateEnd,beatDuration*retrigRateChangeBeats) / beatDuration);
 			retrigCount = PulseCount.ar(retrigTrig);
 			[retrigCount,retrigNumTotal].poll;
 			sliceTrigger = sliceTrigger + (retrigTrig*(retrigCount<retrigNumTotal));
+
+			// Increase pitch based on retrigger
+			// rate = rate * (2 ** (retrigCount / 12));
+			// Lower pitch based on retrigger
+			rate = rate * (2 ** (-1 * (retrigCount / 12)));
 
 			// Determine whether to toggle playback
 			aOrB=ToggleFF.ar(sliceTrigger);
@@ -105,7 +110,7 @@ s.waitForBoot({
 
 			snd = RHPF.ar(snd,60,0.303);
 			snd = AnalogTape.ar(snd,0.8,0.8,0.8,2);
-			ReplaceOut.ar(0,snd*0.1);
+			ReplaceOut.ar(0,snd);
 		}).send(s);
 
 		s.sync;
@@ -130,12 +135,13 @@ s.waitForBoot({
 				outWet: ~busWet,
 				bpmSource: 170,
 				bpmTarget: 185,
-				retrigRateStart: 0.25,
+				retrigRateStart: 1,
 				retrigRateEnd: 32,
-				retrigRateChangeBeats: 16,
+				retrigRateChangeBeats: 64,
 				retrigNumTotal: 32,
-				sliceDurationBeats: 4,
-				pos:0.0,
+				sliceDurationBeats: 0.5,
+				sliceNum: 23,
+				sliceCount:32,
 			]);
 
 		});
