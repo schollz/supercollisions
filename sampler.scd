@@ -2,7 +2,7 @@
 s.waitForBoot({
 	Routine{
 		SynthDef("sampler",{
-			arg buf,outDry=0,outWet=0,t_trig=1,dryWet=0.0,
+			arg buf,t_trig=1,
 			gate = 1.0,
 			rate = 1.0,
 			pitch = 0.0,
@@ -22,9 +22,16 @@ s.waitForBoot({
 			sliceDurationBeats = 1,
 			sliceReleaseBeats = 0.01,
 			sliceNum = 0,
-			sliceCount = 32; // number of slices to cut the sample into
+			sliceCount = 32, // number of slices to cut the sample into
+			effectDry = 1.0,
+			effectDryOut,
+			effectComb = 0.5,
+			effectCombOut,
+			effectReverb = 0.0,
+			effectReverbOut
+			;
 			var snd,sndA,sndB,crossfade,aOrB;
-			var sndWet, sndDry;
+			var sndDry, sndReverb, sndComb;
 			var posA,posB;
 			var retrigTrig, retrigCount;
 			var frames=BufFrames.ir(buf);
@@ -98,16 +105,25 @@ s.waitForBoot({
 			
 			dryWet = Lag.kr(dryWet, 2);
 			
-			
-			Out.ar(outDry,snd*(1-dryWet));
-			Out.ar(outWet,snd*dryWet);
+			// effects, comb filter
+			snd = SelectX.ar(effectComb,[snd, (0.5*snd)+
+				Pan2.ar(CombN.ar(snd[0], 0.02, Rand(0.01,0.06), Rand(1,2)),-1,0.9) +
+				Pan2.ar(CombN.ar(snd[1], 0.02, Rand(0.01,0.06), Rand(1,2)),1,0.9)
+			]);
+
+			Out.ar(effectDryOut, snd*effectDry);
+			Out.ar(effectReverbOut, snd*effectReverb);
+			Out.ar(effectCombOut, snd*effectComb);
 		}).send(s);
 		SynthDef("out",{
 			arg busWet, busDry,volumeDB=0.0,reverbAmt=0.1;
 			var sndWet = In.ar(busWet,2) * Lag.kr(volumeDB.dbamp,2);
 			var sndDry = In.ar(busDry,2) * Lag.kr(volumeDB.dbamp,2);
-			var snd;
+			var snd = sndDry;
 			
+			// comb effect 
+
+
 			// add in reverb
 			snd = SelectX.ar(
 				reverbAmt,[
@@ -149,10 +165,10 @@ s.waitForBoot({
 				retrigNumTotal: 32,
 				retrigPitchChange: 1,
 				pitch:-24,
-				sliceDurationBeats: 0.25,
+				sliceDurationBeats: 1,
 				retrigVolumeChange: 2.0,
 				volumeDB: -24,
-				sliceNum: 0,
+				sliceNum: 30,
 				sliceCount:32,
 			]);
 			
