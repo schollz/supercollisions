@@ -5,6 +5,7 @@ s.waitForBoot({
 			arg buf,outDry=0,outWet=0,t_trig=1,dryWet=0.0,
 			gate = 1.0,
 			rate = 1.0,
+			pitch = 0.0,
 			volumeDB=0.0,
 			xfade=0.005,
 			bpmSource=120, bpmTarget=120,
@@ -44,6 +45,8 @@ s.waitForBoot({
 
 			// Calculate rate
 			rate = rate*BufRateScale.ir(buf)*bpmTarget/bpmSource;
+			// Calculate pitch
+			rate = rate * (2 ** (pitch/12.0));
 
 			// Calculate retriggers
 			retrigTrig = Impulse.ar(XLine.ar(retrigRateStart,retrigRateEnd,beatDuration*retrigRateChangeBeats) / beatDuration);
