@@ -5,7 +5,7 @@ s.waitForBoot({
 			arg buf,outDry=0,outWet=0,t_trig=1,dryWet=0.0,
 			gate = 1.0,
 			rate = 1.0,
-			dbVolume=0.0,
+			volumeDB=0.0,
 			xfade=0.005,
 			bpmSource=120, bpmTarget=120,
 			attack=0.01,
@@ -15,6 +15,8 @@ s.waitForBoot({
 			retrigRateChangeBeats=1,
 			retrigRateStart=1,
 			retrigRateEnd=0,
+			retrigPitchChange=0,
+			retrigVolumeChange=0,
 			sliceAttackBeats = 0.01,
 			sliceDurationBeats = 1,
 			sliceReleaseBeats = 0.01,
@@ -52,7 +54,10 @@ s.waitForBoot({
 			// Increase pitch based on retrigger
 			// rate = rate * (2 ** (retrigCount / 12));
 			// Lower pitch based on retrigger
-			rate = rate * (2 ** (-1 * (retrigCount / 12)));
+			rate = rate * (2 ** (retrigPitchChange * (retrigCount / 12)));
+
+			// Change volume based on retrigger
+			volumeDB = volumeDB + (A2K.kr(retrigCount) * retrigVolumeChange);
 
 			// Determine whether to toggle playback
 			aOrB=ToggleFF.ar(sliceTrigger);
@@ -80,7 +85,7 @@ s.waitForBoot({
 				phase:posB,
 			)*(1-crossfade));
 
-			snd = snd * Lag.kr(dbVolume.dbamp,2);
+			snd = snd * Lag.kr(volumeDB.dbamp,0.2);
 
 			// full envelope
 			snd = snd * EnvGen.ar(Env.adsr(attack,0.0,1.0,release),gate,doneAction:2);
@@ -95,9 +100,9 @@ s.waitForBoot({
 			Out.ar(outWet,snd*dryWet);
 		}).send(s);
 		SynthDef("out",{
-			arg busWet, busDry,dbVolume=0.0,reverbAmt=0.1;
-			var sndWet = In.ar(busWet,2) * Lag.kr(dbVolume.dbamp,2);
-			var sndDry = In.ar(busDry,2) * Lag.kr(dbVolume.dbamp,2);
+			arg busWet, busDry,volumeDB=0.0,reverbAmt=0.1;
+			var sndWet = In.ar(busWet,2) * Lag.kr(volumeDB.dbamp,2);
+			var sndDry = In.ar(busDry,2) * Lag.kr(volumeDB.dbamp,2);
 			var snd;
 
 			// add in reverb
@@ -120,7 +125,7 @@ s.waitForBoot({
 		~synOut = Synth.tail(s,"out",[
 			busWet: ~busWet,
 			busDry: ~busDry,
-			dbVolume: 6,
+			volumeDB: 6,
 		]);
 		s.sync;
 
@@ -135,12 +140,15 @@ s.waitForBoot({
 				outWet: ~busWet,
 				bpmSource: 170,
 				bpmTarget: 185,
-				retrigRateStart: 1,
-				retrigRateEnd: 32,
+				retrigRateStart: 2,
+				retrigRateEnd: 64,
 				retrigRateChangeBeats: 64,
 				retrigNumTotal: 32,
-				sliceDurationBeats: 0.5,
-				sliceNum: 23,
+				retrigPitchChange: 0,
+				sliceDurationBeats: 0.25,
+				retrigVolumeChange: 2.0,
+				volumeDB: -24,
+				sliceNum: 0,
 				sliceCount:32,
 			]);
 
