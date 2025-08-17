@@ -144,7 +144,7 @@ s.waitForBoot({
 				retrigRateEnd: 64,
 				retrigRateChangeBeats: 64,
 				retrigNumTotal: 32,
-				retrigPitchChange: 0,
+				retrigPitchChange: 1,
 				sliceDurationBeats: 0.25,
 				retrigVolumeChange: 2.0,
 				volumeDB: -24,
