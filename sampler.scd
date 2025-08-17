@@ -71,3 +71,4 @@ x = Synth("sampler",[
 )
 x.set(\t_trig,1);
 e.play;
+
