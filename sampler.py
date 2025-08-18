@@ -30,7 +30,7 @@ def send_sampler_osc(
     retrig_pitch_change=0.0,
     retrig_volume_change=0.0,
     slice_attack_beats=0.001,
-    slice_duration_beats=8.0,
+    slice_duration_beats=1.0,
     slice_release_beats=0.001,
     slice_num=0.0,
     slice_count=32.0,
@@ -91,7 +91,13 @@ if __name__ == "__main__":
     # Advanced usage with custom parameters
     bpm_target = 180
     slice_num = 16
+    # create a set defined permutation
     for i in range(900):
+        if (i % 32) == 0:
+            slice_permutation = random.sample(list(range(1, 17)), k=16)
+            slice_permutation = list(range(1, 17))
+            # slice_permutation = slice_permutation[:4]
+
         retrigger_num_total = 0.0
         retrig_rate_start = 0.0
         retrigger_rate_end = 0.0
@@ -100,10 +106,11 @@ if __name__ == "__main__":
         retrig_pitch_change = 0
         volume_db = 0
         effect_comb = 0
-        slice = i % slice_num
+        effect_reverb = 0
+        slice = i % 16
         if random.randint(1, 8) < 2:
-            retrigger_num_total = random.randint(1, 6) * 8
-            retrig_rate_start = random.randint(1, 8)
+            retrigger_num_total = random.randint(1, 64)
+            retrig_rate_start = random.randint(1, 16) / 4
             retrigger_rate_end = retrig_rate_start
             if random.randint(1, 8) < 2:
                 retrigger_rate_end = retrig_rate_start * random.randint(1, 5)
@@ -112,17 +119,21 @@ if __name__ == "__main__":
             if retrig_volume_change > 0:
                 volume_db = retrigger_num_total * -1 * retrig_volume_change / 8
 
-            beat_duration = beat_duration * random.choice([1, 2, 4, 8])
+            beat_duration = beat_duration * random.choice([1, 2, 4, 8, 16])
 
         if random.randint(1, 8) < 4:
             slice = random.randint(0, slice_num - 1)
 
         if random.randint(1, 8) < 2:
             effect_comb = 1.0
+            print("COMB")
+        if random.randint(1, 8) < 2:
+            effect_reverb = 1.0
+            print("REVERB")
         send_sampler_osc(
-            filename="/home/zns/Documents/supercollisions/amen_5c2d11c8_beats16_bpm170.flac",
+            filename="/home/zns/Documents/supercollisions/amen_0efedaab_beats8_bpm165.flac",
             volume_db=volume_db,
-            bpm_source=170.0,
+            bpm_source=165,
             bpm_target=bpm_target,
             slice_num=slice,
             slice_count=slice_num,
@@ -131,7 +142,8 @@ if __name__ == "__main__":
             retrig_rate_end=retrigger_rate_end,
             retrig_volume_change=retrig_volume_change,
             retrig_pitch_change=retrig_pitch_change,
-            effect_reverb=0.0,
             effect_comb=effect_comb,
+            effect_reverb=effect_reverb,
+            slice_duration_beats=8,
         )
         time.sleep(beat_duration)

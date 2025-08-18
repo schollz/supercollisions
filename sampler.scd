@@ -28,6 +28,7 @@ s.waitForBoot({
 			effectDry = 1.0,
 			effectDryOut,
 			effectComb = 0.0,
+			effectCombOut,
 			effectDelay = 0.0,
 			effectReverb = 0.0,
 			effectReverbOut
@@ -106,11 +107,7 @@ s.waitForBoot({
 			// slice envelope
 			snd = snd * EnvGen.ar(Env.new([0,1,1,0],[sliceAttackBeats,sliceDurationBeats,sliceReleaseBeats]*beatDuration,[-4,4]), sliceTrigger);
 			
-			// effects, comb filter
-			snd = SelectX.ar(effectComb,[snd, (0.5*snd)+
-				Pan2.ar(CombN.ar(snd[0], 0.02, Rand(0.01,0.06), Rand(1,2)),-1,0.9) +
-				Pan2.ar(CombN.ar(snd[1], 0.02, Rand(0.01,0.06), Rand(1,2)),1,0.9)
-			]);
+			// Comb filter processing removed from here
 
 			DetectSilence.ar(snd,time:1,doneAction:2);
 
@@ -118,34 +115,49 @@ s.waitForBoot({
 			LocalOut.ar(retrigCount);
 
 			Out.ar(effectDryOut, snd*effectDry);
-			Out.ar(effectReverbOut, snd*effectReverb);
+			Out.ar(effectCombOut, snd*XLine.kr(0.001,effectComb,sliceDurationBeats*beatDuration/2));
+			Out.ar(effectReverbOut, snd*XLine.kr(0.001,effectReverb,sliceDurationBeats*beatDuration/2));
 		}).add;
+
 		SynthDef("out",{
-			arg busReverb, busDry,volumeDB=0.0,reverbAmt=0.1;
+			arg busReverb, busDry, busComb, volumeDB=0.0, reverbAmt=0.1, combAmt=0.0;
 			var sndWet = In.ar(busReverb,2) * Lag.kr(volumeDB.dbamp,2);
 			var sndDry = In.ar(busDry,2) * Lag.kr(volumeDB.dbamp,2);
-			var snd = sndDry;
+			var sndComb = In.ar(busComb,2) * Lag.kr(volumeDB.dbamp,2);
+			var snd = 				sndDry;
+			
+			// add in comb
+			snd = snd + ((0.5*sndComb)+
+					Pan2.ar(CombN.ar(sndComb[0], 0.02, Rand(0.01,0.06), Rand(1,2)),-1,0.9) +
+					Pan2.ar(CombN.ar(sndComb[1], 0.02, Rand(0.01,0.06), Rand(1,2)),1,0.9));
 
 			// add in reverb
 			snd = SelectX.ar(
 				reverbAmt,[
-					sndDry,
-					Fverb.ar(sndWet[0],sndWet[1],200,tail_density: LFNoise2.ar(1/3).range(50,90),decay: LFNoise2.ar(1/3).range(50,70))
+					snd,
+					snd + Fverb.ar(sndWet[0],sndWet[1],200,tail_density: LFNoise2.ar(1/3).range(50,90),decay: LFNoise2.ar(1/3).range(50,70))
 				]
 			);
 			
 			snd = RHPF.ar(snd,60,0.303);
-			snd = AnalogTape.ar(snd,0.8,0.8,0.8,2);
-			ReplaceOut.ar(0,snd*0.9);
+			snd = AnalogTape.ar(snd,
+				bias: 0.5,
+				saturation: 1.2,
+				drive: 0.5,
+				oversample: 2,
+			);
+			ReplaceOut.ar(0,snd*4);
 		}).add;
 		
 		s.sync;
 		~busDry = Bus.audio(s, 2);
 		~busReverb = Bus.audio(s, 2);
+		~busComb = Bus.audio(s, 2);
 		s.sync;
 		~synOut = Synth.tail(s,"out",[
 			busReverb: ~busReverb,
 			busDry: ~busDry,
+			busComb: ~busComb,
 			volumeDB: 6,
 		]);
 		s.sync;
@@ -189,6 +201,7 @@ s.waitForBoot({
 				Synth.head(s,"sampler",[
 					buf:b,
 					effectDryOut: ~busDry,
+					effectCombOut: ~busComb,
 					effectReverbOut: ~busReverb,
 					volumeDB: volumeDB,
 					rate: rate,
@@ -237,4 +250,3 @@ s.waitForBoot({
 
 });
 )
-
