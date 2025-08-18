@@ -97,10 +97,10 @@ s.waitForBoot({
 			snd = snd * Lag.kr(volumeDB.dbamp,0.2);
 			
 			// full envelope
-			snd = snd * EnvGen.ar(Env.adsr(xfade,0.0,1.0,xfade,curve:\sine),gate,doneAction:2).poll;
+			snd = snd * EnvGen.ar(Env.adsr(xfade,0.0,1.0,xfade,curve:\sine),gate,doneAction:2);
 			
-			// // slice envelope
-			// snd = snd * EnvGen.ar(Env.new([0,1,1,0],[sliceAttackBeats,sliceDurationBeats,sliceReleaseBeats]*beatDuration,[-4,4]), sliceTrigger);
+			// slice envelope
+			snd = snd * EnvGen.ar(Env.new([0,1,1,0],[sliceAttackBeats,sliceDurationBeats,sliceReleaseBeats]*beatDuration,[-4,4]), sliceTrigger, doneAction:2);
 			
 			// effects, comb filter
 			snd = SelectX.ar(effectComb,[snd, (0.5*snd)+
@@ -160,8 +160,8 @@ s.waitForBoot({
 				retrigRateEnd: 4,
 				retrigRateChangeBeats: 64,
 				retrigNumTotal: 12,
-				retrigPitchChange: -1,
-				pitch:12,
+				// retrigPitchChange: 12,
+				// pitch:12,
 				sliceDurationBeats: 0.9,
 				retrigVolumeChange: 0.0,
 				volumeDB: 0,
@@ -170,29 +170,29 @@ s.waitForBoot({
 			]).onFree({
 				[b,"freed"].postln;
 			});
-			Pbind(
-				\instrument, \sampler,  // Add this line
-				\addAction, 0,  
-				\buf, b,
-				\effectDryOut, ~busDry,
-				\effectReverbOut, ~busReverb,
-				\bpmSource, 170,
-				\bpmTarget, 185,
-				\retrigRateStart, Prand([0,0,0,16,0,8],inf),
-				\retrigRateEnd, Prand([0,0,0,0,0,32,0],inf),
-				\retrigRateChangeBeats, 1,
-				\retrigNumTotal, Prand([0,0,0,16,0,8],inf),
-				\retrigPitchChange, Prand([0,1,4,8,15],inf),
-				\pitch, 0,
-				\sliceDurationBeats, 0.9,
-				\retrigVolumeChange, 0.0,
-				\volumeDB, 0,
-				\sliceNum, Pseq((0..15), inf),
-				\sliceCount, 16,
-				\xfade, 0.01,
-				\dur, 60/185,
-				\legato, 1.0,
-			).play;
+			// Pbind(
+			// 	\instrument, \sampler,  // Add this line
+			// 	\addAction, 0,  
+			// 	\buf, b,
+			// 	\effectDryOut, ~busDry,
+			// 	\effectReverbOut, ~busReverb,
+			// 	\bpmSource, 170,
+			// 	\bpmTarget, 185,
+			// 	\retrigRateStart, Prand([0,0,0,16,0,8],inf),
+			// 	\retrigRateEnd, Prand([0,0,0,0,0,32,0],inf),
+			// 	\retrigRateChangeBeats, 1,
+			// 	\retrigNumTotal, Prand([0,0,0,16,0,8],inf),
+			// 	\retrigPitchChange, Prand([0,1,4,8,15],inf),
+			// 	\pitch, 0,
+			// 	\sliceDurationBeats, 0.9,
+			// 	\retrigVolumeChange, 0.0,
+			// 	\volumeDB, 0,
+			// 	\sliceNum, Pseq((0..15), inf),
+			// 	\sliceCount, 16,
+			// 	\xfade, 0.01,
+			// 	\dur, 60/185,
+			// 	\legato, 1.0,
+			// ).play;
 
 		});
 		
