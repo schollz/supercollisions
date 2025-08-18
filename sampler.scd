@@ -25,8 +25,8 @@ s.waitForBoot({
 			sliceCount = 32, // number of slices to cut the sample into
 			effectDry = 1.0,
 			effectDryOut,
-			effectComb = 0.5,
-			effectCombOut,
+			effectComb = 0.0,
+			effectDelay = 0.0,
 			effectReverb = 0.0,
 			effectReverbOut
 			;
@@ -98,7 +98,7 @@ s.waitForBoot({
 			snd = snd * Lag.kr(volumeDB.dbamp,0.2);
 			
 			// full envelope
-			snd = snd * EnvGen.ar(Env.adsr(attack,0.0,1.0,release),gate,doneAction:2);
+			snd = snd * EnvGen.ar(Env.adsr(attack,0.0,1.0,release),gate);
 			
 			// slice envelope
 			snd = snd * EnvGen.ar(Env.new([0,1,1,0],[sliceAttackBeats,sliceDurationBeats,sliceReleaseBeats]*beatDuration,[-4,4]), sliceTrigger);
@@ -111,13 +111,15 @@ s.waitForBoot({
 				Pan2.ar(CombN.ar(snd[1], 0.02, Rand(0.01,0.06), Rand(1,2)),1,0.9)
 			]);
 
+			// effect envelope, has a longer tail 
+			snd = snd * EnvGen.ar(Env.new([0,1,1,0],[sliceAttackBeats,sliceDurationBeats,sliceReleaseBeats*2]*beatDuration,[-4,4]), sliceTrigger, doneAction:2);
+
 			Out.ar(effectDryOut, snd*effectDry);
 			Out.ar(effectReverbOut, snd*effectReverb);
-			Out.ar(effectCombOut, snd*effectComb);
 		}).send(s);
 		SynthDef("out",{
-			arg busWet, busDry,volumeDB=0.0,reverbAmt=0.1;
-			var sndWet = In.ar(busWet,2) * Lag.kr(volumeDB.dbamp,2);
+			arg busReverb, busDry,volumeDB=0.0,reverbAmt=0.1;
+			var sndWet = In.ar(busReverb,2) * Lag.kr(volumeDB.dbamp,2);
 			var sndDry = In.ar(busDry,2) * Lag.kr(volumeDB.dbamp,2);
 			var snd = sndDry;
 			
@@ -139,10 +141,10 @@ s.waitForBoot({
 		
 		s.sync;
 		~busDry = Bus.audio(s, 2);
-		~busWet = Bus.audio(s, 2);
+		~busReverb = Bus.audio(s, 2);
 		s.sync;
 		~synOut = Synth.tail(s,"out",[
-			busWet: ~busWet,
+			busReverb: ~busReverb,
 			busDry: ~busDry,
 			volumeDB: 6,
 		]);
@@ -155,8 +157,8 @@ s.waitForBoot({
 			["loaded",b].postln;
 			x = Synth.head(s,"sampler",[
 				buf:b,
-				outDry: ~busDry,
-				outWet: ~busWet,
+				effectDryOut: ~busDry,
+				effectReverbOut: ~busReverb,
 				bpmSource: 170,
 				bpmTarget: 185,
 				retrigRateStart: 2,
