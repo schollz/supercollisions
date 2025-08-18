@@ -25,7 +25,7 @@ s.waitForBoot({
 			sliceCount = 32, // number of slices to cut the sample into
 			effectDry = 1.0,
 			effectDryOut,
-			effectComb = 0.0,
+			effectComb = 1.0,
 			effectDelay = 0.0,
 			effectReverb = 0.0,
 			effectReverbOut
@@ -102,8 +102,6 @@ s.waitForBoot({
 			
 			// slice envelope
 			snd = snd * EnvGen.ar(Env.new([0,1,1,0],[sliceAttackBeats,sliceDurationBeats,sliceReleaseBeats]*beatDuration,[-4,4]), sliceTrigger);
-			
-			dryWet = Lag.kr(dryWet, 2);
 			
 			// effects, comb filter
 			snd = SelectX.ar(effectComb,[snd, (0.5*snd)+
