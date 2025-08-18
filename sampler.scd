@@ -7,10 +7,8 @@ s.waitForBoot({
 			rate = 1.0,
 			pitch = 0.0,
 			volumeDB=0.0,
-			xfade=0.005,
+			xfade=0.01,
 			bpmSource=120, bpmTarget=120,
-			attack=0.01,
-			release=0.01,
 			// retriggering
 			retrigNumTotal=0,
 			retrigRateChangeBeats=1,
@@ -18,9 +16,9 @@ s.waitForBoot({
 			retrigRateEnd=0,
 			retrigPitchChange=0,
 			retrigVolumeChange=0,
-			sliceAttackBeats = 0.01,
-			sliceDurationBeats = 1,
-			sliceReleaseBeats = 0.01,
+			sliceAttackBeats = 0.001,
+			sliceDurationBeats = 0,
+			sliceReleaseBeats = 0.001,
 			sliceNum = 0,
 			sliceCount = 32, // number of slices to cut the sample into
 			effectDry = 1.0,
@@ -60,7 +58,6 @@ s.waitForBoot({
 			retrigCountFeedback = LocalIn.ar(1);
 			retrigTrig = Impulse.ar(XLine.ar(retrigRateStart,retrigRateEnd,beatDuration*retrigRateChangeBeats) / beatDuration);
 			retrigCount = PulseCount.ar(retrigTrig * (retrigCountFeedback<retrigNumTotal));
-			[retrigCount,retrigNumTotal].poll;
 			sliceTrigger = sliceTrigger + (retrigTrig*(retrigCount<retrigNumTotal));
 			
 			// Increase pitch based on retrigger
@@ -100,10 +97,10 @@ s.waitForBoot({
 			snd = snd * Lag.kr(volumeDB.dbamp,0.2);
 			
 			// full envelope
-			snd = snd * EnvGen.ar(Env.adsr(attack,0.0,1.0,release),gate);
+			snd = snd * EnvGen.ar(Env.adsr(xfade,0.0,1.0,xfade,curve:\sine),gate,doneAction:2).poll;
 			
-			// slice envelope
-			snd = snd * EnvGen.ar(Env.new([0,1,1,0],[sliceAttackBeats,sliceDurationBeats,sliceReleaseBeats]*beatDuration,[-4,4]), sliceTrigger);
+			// // slice envelope
+			// snd = snd * EnvGen.ar(Env.new([0,1,1,0],[sliceAttackBeats,sliceDurationBeats,sliceReleaseBeats]*beatDuration,[-4,4]), sliceTrigger);
 			
 			// effects, comb filter
 			snd = SelectX.ar(effectComb,[snd, (0.5*snd)+
@@ -111,15 +108,12 @@ s.waitForBoot({
 				Pan2.ar(CombN.ar(snd[1], 0.02, Rand(0.01,0.06), Rand(1,2)),1,0.9)
 			]);
 
-			// effect envelope, has a longer tail 
-			snd = snd * EnvGen.ar(Env.new([0,1,1,0],[sliceAttackBeats,sliceDurationBeats,sliceReleaseBeats*2]*beatDuration,[-4,4]), sliceTrigger, doneAction:2);
-
 			// Feedback
 			LocalOut.ar(retrigCount);
 
 			Out.ar(effectDryOut, snd*effectDry);
 			Out.ar(effectReverbOut, snd*effectReverb);
-		}).send(s);
+		}).add;
 		SynthDef("out",{
 			arg busReverb, busDry,volumeDB=0.0,reverbAmt=0.1;
 			var sndWet = In.ar(busReverb,2) * Lag.kr(volumeDB.dbamp,2);
@@ -137,7 +131,7 @@ s.waitForBoot({
 			snd = RHPF.ar(snd,60,0.303);
 			snd = AnalogTape.ar(snd,0.8,0.8,0.8,2);
 			ReplaceOut.ar(0,snd*2);
-		}).send(s);
+		}).add;
 		
 		s.sync;
 		~busDry = Bus.audio(s, 2);
@@ -155,6 +149,7 @@ s.waitForBoot({
 		e=Buffer.read(s,~filename,action:{
 			arg b;
 			["loaded",b].postln;
+
 			x = Synth.head(s,"sampler",[
 				buf:b,
 				effectDryOut: ~busDry,
@@ -175,6 +170,29 @@ s.waitForBoot({
 			]).onFree({
 				[b,"freed"].postln;
 			});
+			Pbind(
+				\instrument, \sampler,  // Add this line
+				\addAction, 0,  
+				\buf, b,
+				\effectDryOut, ~busDry,
+				\effectReverbOut, ~busReverb,
+				\bpmSource, 170,
+				\bpmTarget, 185,
+				\retrigRateStart, Prand([0,0,0,16,0,8],inf),
+				\retrigRateEnd, Prand([0,0,0,0,0,32,0],inf),
+				\retrigRateChangeBeats, 1,
+				\retrigNumTotal, Prand([0,0,0,16,0,8],inf),
+				\retrigPitchChange, Prand([0,1,4,8,15],inf),
+				\pitch, 0,
+				\sliceDurationBeats, 0.9,
+				\retrigVolumeChange, 0.0,
+				\volumeDB, 0,
+				\sliceNum, Pseq((0..15), inf),
+				\sliceCount, 16,
+				\xfade, 0.01,
+				\dur, 60/185,
+				\legato, 1.0,
+			).play;
 
 		});
 		
