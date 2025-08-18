@@ -2,14 +2,17 @@
 s.waitForBoot({
 	Routine{
 		~serverLatency = 0.1;
+
 		SynthDef("sampler",{
-			arg buf,t_trig=1,
-			gate = 1.0,
+			arg buf,
+			volumeDB=0,
 			rate = 1.0,
 			pitch = 0.0,
-			volumeDB=0.0,
+			gate = 1,
+			t_trig = 1,
 			xfade=0.01,
-			bpmSource=120, bpmTarget=120,
+			bpmSource=120, 
+			bpmTarget=120,
 			// retriggering
 			retrigNumTotal=0,
 			retrigRateChangeBeats=1,
@@ -133,7 +136,7 @@ s.waitForBoot({
 			
 			snd = RHPF.ar(snd,60,0.303);
 			snd = AnalogTape.ar(snd,0.8,0.8,0.8,2);
-			ReplaceOut.ar(0,snd*0.2);
+			ReplaceOut.ar(0,snd*0.9);
 		}).add;
 		
 		s.sync;
@@ -147,85 +150,91 @@ s.waitForBoot({
 		]);
 		s.sync;
 		~sampleCache = Dictionary.new();
-
-		~filename = "C:\\Users\\zacks\\Documents\\supercollisions\\amen_5c2d11c8_beats16_bpm170.flac";
-		~filename = "/home/zns/Documents/supercollisions/amen_5c2d11c8_beats16_bpm170.flac";
-		e=Buffer.read(s,~filename,action:{
-			arg b;
-			["loaded",b].postln;
-
-			s.makeBundle(~serverLatency,{
-				x = Synth.head(s,"sampler",[
+		~synthsPlaying = Dictionary.new();
+		~playFromMsg = {
+			arg msg, b;
+			var filename = msg[1].asString;
+			var volumeDB = msg[2].asFloat;
+			var rate = msg[3].asFloat;
+			var pitch = msg[4].asFloat;
+			var xfade = msg[5].asFloat;
+			var bpmSource = msg[6].asFloat;
+			var bpmTarget = msg[7].asFloat;
+			var retrigNumTotal = msg[8].asFloat;
+			var retrigRateChangeBeats = msg[9].asFloat;
+			var retrigRateStart = msg[10].asFloat;
+			var retrigRateEnd = msg[11].asFloat;
+			var retrigPitchChange = msg[12].asFloat;
+			var retrigVolumeChange = msg[13].asFloat;
+			var sliceAttackBeats = msg[14].asFloat;
+			var sliceDurationBeats = msg[15].asFloat;
+			var sliceReleaseBeats = msg[16].asFloat;
+			var sliceNum = msg[17].asFloat;
+			var sliceCount = msg[18].asFloat;
+			var effectDry = msg[19].asFloat;
+			var effectComb = msg[20].asFloat;
+			var effectDelay = msg[21].asFloat;
+			var effectReverb = msg[22].asFloat;
+			var synName = 1000000.rand.asString;
+			// stop all currently playing synths
+			~synthsPlaying.values.do({
+				arg syn;
+				if (syn.isPlaying,{
+					if (syn.notNil,{
+						syn.set(\gate,0);
+					});
+				});
+			});
+			~synthsPlaying.put(synName,
+				Synth.head(s,"sampler",[
 					buf:b,
 					effectDryOut: ~busDry,
 					effectReverbOut: ~busReverb,
-					bpmSource: 170,
-					bpmTarget: 185,
-					retrigRateStart: 0.5,
-					retrigRateEnd: 16,
-					retrigRateChangeBeats: 16,
-					retrigNumTotal: 64,
-					// retrigPitchChange: 12,
-					// pitch:12,
-					sliceDurationBeats: 1.0,
-					retrigVolumeChange: 0.0,
-					volumeDB: 0,
-					sliceNum: 0,
-					sliceCount:32,
+					volumeDB: volumeDB,
+					rate: rate,
+					pitch:pitch,
+					xfade:xfade,
+					bpmSource: bpmSource,
+					bpmTarget: bpmTarget,
+					retrigRateStart: retrigRateStart,
+					retrigRateEnd: retrigRateEnd,
+					retrigRateChangeBeats: retrigRateChangeBeats,
+					retrigNumTotal: retrigNumTotal,
+					retrigPitchChange: retrigPitchChange,
+					retrigVolumeChange: retrigVolumeChange,
+					sliceAttackBeats: sliceAttackBeats,
+					sliceDurationBeats: sliceDurationBeats,
+					sliceReleaseBeats: sliceReleaseBeats,
+					sliceNum: sliceNum,
+					sliceCount: sliceCount,
+					effectDry: effectDry,
+					effectComb: effectComb,
+					effectDelay: effectDelay,
+					effectReverb: effectReverb,
 				]).onFree({
 					[b,"freed"].postln;
+					~synthsPlaying.removeAt(synName);
 				});
-			});
-			// Pbind(
-			// 	\instrument, \sampler,  // Add this line
-			// 	\addAction, 0,  
-			// 	\buf, b,
-			// 	\effectDryOut, ~busDry,
-			// 	\effectReverbOut, ~busReverb,
-			// 	\bpmSource, 170,
-			// 	\bpmTarget, 185,
-			// 	\retrigRateStart, Prand([0,0,0,16,0,8],inf),
-			// 	\retrigRateEnd, Prand([0,0,0,0,0,32,0],inf),
-			// 	\retrigRateChangeBeats, 1,
-			// 	\retrigNumTotal, Prand([0,0,0,16,0,8],inf),
-			// 	\retrigPitchChange, Prand([0,1,4,8,15],inf),
-			// 	\pitch, 0,
-			// 	\sliceDurationBeats, 0.9,
-			// 	\retrigVolumeChange, 0.0,
-			// 	\volumeDB, 0,
-			// 	\sliceNum, Pseq((0..15), inf),
-			// 	\sliceCount, 16,
-			// 	\xfade, 0.01,
-			// 	\dur, 60/185,
-			// 	\legato, 1.0,
-			// ).play;
-
-		});
-		
-		// x.set(\t_trig,1);
-		// e.play;
-		~playFromMsg = {
-			arg msg;
-			["playing",msg[3]].postln;
+			);
 
 		};
 
-
-		o.free;
 		o = OSCFunc({ |msg|
-			var filename = msg[3];
+			var filename = msg[1];
+			msg.postln;
 			if (~sampleCache.at(filename).isNil,{
-				~playFromMsg.(msg);
-			},{
 				// load sample
 				~sampleCache.put(filename, Buffer.read(s,filename,action:{ |b|
 					["loaded",b].postln;
-					~playFromMsg.(msg);
+					~playFromMsg.(msg,b);
 				}));
+			},{
+				~playFromMsg.(msg,~sampleCache.at(filename));
 			});
-		}, '/sampler');
-		["loaded"].postln;
+		},'/sampler');
+		["loaded",NetAddr.langPort, NetAddr.localAddr].postln;
 	}.play;
+
 });
 )
 
