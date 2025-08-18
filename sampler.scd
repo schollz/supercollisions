@@ -1,6 +1,7 @@
 (
 s.waitForBoot({
 	Routine{
+		~serverLatency = 0.1;
 		SynthDef("sampler",{
 			arg buf,t_trig=1,
 			gate = 1.0,
@@ -100,13 +101,15 @@ s.waitForBoot({
 			snd = snd * EnvGen.ar(Env.adsr(xfade,0.0,1.0,xfade,curve:\sine),gate,doneAction:2);
 			
 			// slice envelope
-			snd = snd * EnvGen.ar(Env.new([0,1,1,0],[sliceAttackBeats,sliceDurationBeats,sliceReleaseBeats]*beatDuration,[-4,4]), sliceTrigger, doneAction:2);
+			snd = snd * EnvGen.ar(Env.new([0,1,1,0],[sliceAttackBeats,sliceDurationBeats,sliceReleaseBeats]*beatDuration,[-4,4]), sliceTrigger);
 			
 			// effects, comb filter
 			snd = SelectX.ar(effectComb,[snd, (0.5*snd)+
 				Pan2.ar(CombN.ar(snd[0], 0.02, Rand(0.01,0.06), Rand(1,2)),-1,0.9) +
 				Pan2.ar(CombN.ar(snd[1], 0.02, Rand(0.01,0.06), Rand(1,2)),1,0.9)
 			]);
+
+			DetectSilence.ar(snd,time:1,doneAction:2);
 
 			// Feedback
 			LocalOut.ar(retrigCount);
@@ -130,7 +133,7 @@ s.waitForBoot({
 			
 			snd = RHPF.ar(snd,60,0.303);
 			snd = AnalogTape.ar(snd,0.8,0.8,0.8,2);
-			ReplaceOut.ar(0,snd*2);
+			ReplaceOut.ar(0,snd*0.2);
 		}).add;
 		
 		s.sync;
@@ -143,32 +146,35 @@ s.waitForBoot({
 			volumeDB: 6,
 		]);
 		s.sync;
-		
+		~sampleCache = Dictionary.new();
+
 		~filename = "C:\\Users\\zacks\\Documents\\supercollisions\\amen_5c2d11c8_beats16_bpm170.flac";
 		~filename = "/home/zns/Documents/supercollisions/amen_5c2d11c8_beats16_bpm170.flac";
 		e=Buffer.read(s,~filename,action:{
 			arg b;
 			["loaded",b].postln;
 
-			x = Synth.head(s,"sampler",[
-				buf:b,
-				effectDryOut: ~busDry,
-				effectReverbOut: ~busReverb,
-				bpmSource: 170,
-				bpmTarget: 185,
-				retrigRateStart: 4,
-				retrigRateEnd: 4,
-				retrigRateChangeBeats: 64,
-				retrigNumTotal: 12,
-				// retrigPitchChange: 12,
-				// pitch:12,
-				sliceDurationBeats: 0.9,
-				retrigVolumeChange: 0.0,
-				volumeDB: 0,
-				sliceNum: 1,
-				sliceCount:32,
-			]).onFree({
-				[b,"freed"].postln;
+			s.makeBundle(~serverLatency,{
+				x = Synth.head(s,"sampler",[
+					buf:b,
+					effectDryOut: ~busDry,
+					effectReverbOut: ~busReverb,
+					bpmSource: 170,
+					bpmTarget: 185,
+					retrigRateStart: 0.5,
+					retrigRateEnd: 16,
+					retrigRateChangeBeats: 16,
+					retrigNumTotal: 64,
+					// retrigPitchChange: 12,
+					// pitch:12,
+					sliceDurationBeats: 1.0,
+					retrigVolumeChange: 0.0,
+					volumeDB: 0,
+					sliceNum: 0,
+					sliceCount:32,
+				]).onFree({
+					[b,"freed"].postln;
+				});
 			});
 			// Pbind(
 			// 	\instrument, \sampler,  // Add this line
@@ -198,7 +204,26 @@ s.waitForBoot({
 		
 		// x.set(\t_trig,1);
 		// e.play;
-		
+		~playFromMsg = {
+			arg msg;
+			["playing",msg[3]].postln;
+
+		};
+
+
+		o.free;
+		o = OSCFunc({ |msg|
+			var filename = msg[3];
+			if (~sampleCache.at(filename).isNil,{
+				~playFromMsg.(msg);
+			},{
+				// load sample
+				~sampleCache.put(filename, Buffer.read(s,filename,action:{ |b|
+					["loaded",b].postln;
+					~playFromMsg.(msg);
+				}));
+			});
+		}, '/sampler');
 		["loaded"].postln;
 	}.play;
 });
