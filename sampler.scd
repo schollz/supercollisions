@@ -25,7 +25,7 @@ s.waitForBoot({
 			sliceCount = 32, // number of slices to cut the sample into
 			effectDry = 1.0,
 			effectDryOut,
-			effectComb = 1.0,
+			effectComb = 0.0,
 			effectDelay = 0.0,
 			effectReverb = 0.0,
 			effectReverbOut
@@ -39,6 +39,7 @@ s.waitForBoot({
 			var pos = 0.0;
 			var sliceTrigger = t_trig;
 			var beatDuration = 60 / bpmTarget;
+			var retrigCountFeedback = 0;
 			
 			sliceNum = sliceNum.mod(sliceCount);
 			// convert slice beat to seconds
@@ -56,8 +57,9 @@ s.waitForBoot({
 			rate = rate * (2 ** (pitch/12.0));
 			
 			// Calculate retriggers
+			retrigCountFeedback = LocalIn.ar(1);
 			retrigTrig = Impulse.ar(XLine.ar(retrigRateStart,retrigRateEnd,beatDuration*retrigRateChangeBeats) / beatDuration);
-			retrigCount = PulseCount.ar(retrigTrig);
+			retrigCount = PulseCount.ar(retrigTrig * (retrigCountFeedback<retrigNumTotal));
 			[retrigCount,retrigNumTotal].poll;
 			sliceTrigger = sliceTrigger + (retrigTrig*(retrigCount<retrigNumTotal));
 			
@@ -112,6 +114,9 @@ s.waitForBoot({
 			// effect envelope, has a longer tail 
 			snd = snd * EnvGen.ar(Env.new([0,1,1,0],[sliceAttackBeats,sliceDurationBeats,sliceReleaseBeats*2]*beatDuration,[-4,4]), sliceTrigger, doneAction:2);
 
+			// Feedback
+			LocalOut.ar(retrigCount);
+
 			Out.ar(effectDryOut, snd*effectDry);
 			Out.ar(effectReverbOut, snd*effectReverb);
 		}).send(s);
@@ -120,9 +125,6 @@ s.waitForBoot({
 			var sndWet = In.ar(busReverb,2) * Lag.kr(volumeDB.dbamp,2);
 			var sndDry = In.ar(busDry,2) * Lag.kr(volumeDB.dbamp,2);
 			var snd = sndDry;
-			
-			// comb effect 
-
 
 			// add in reverb
 			snd = SelectX.ar(
@@ -134,7 +136,7 @@ s.waitForBoot({
 			
 			snd = RHPF.ar(snd,60,0.303);
 			snd = AnalogTape.ar(snd,0.8,0.8,0.8,2);
-			ReplaceOut.ar(0,snd);
+			ReplaceOut.ar(0,snd*2);
 		}).send(s);
 		
 		s.sync;
@@ -159,19 +161,21 @@ s.waitForBoot({
 				effectReverbOut: ~busReverb,
 				bpmSource: 170,
 				bpmTarget: 185,
-				retrigRateStart: 2,
-				retrigRateEnd: 64,
+				retrigRateStart: 4,
+				retrigRateEnd: 4,
 				retrigRateChangeBeats: 64,
-				retrigNumTotal: 32,
-				retrigPitchChange: 1,
-				pitch:-24,
-				sliceDurationBeats: 1,
-				retrigVolumeChange: 2.0,
-				volumeDB: -24,
-				sliceNum: 30,
+				retrigNumTotal: 12,
+				retrigPitchChange: -1,
+				pitch:12,
+				sliceDurationBeats: 0.9,
+				retrigVolumeChange: 0.0,
+				volumeDB: 0,
+				sliceNum: 1,
 				sliceCount:32,
-			]);
-			
+			]).onFree({
+				[b,"freed"].postln;
+			});
+
 		});
 		
 		// x.set(\t_trig,1);
