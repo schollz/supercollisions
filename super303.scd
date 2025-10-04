@@ -162,7 +162,7 @@ SynthDef(\acid303, {
 	] * [1 - waveMix, waveMix]);
 
 	// --- Envelopes (retriggered) ---
-	env = EnvGen.ar(Env.perc(0.005, 1.0), t_trig);
+	env = EnvGen.ar(Env.perc(0.005, 0.5), t_trig);
 	fenv = EnvGen.kr(Env.perc(0.001, 0.20), t_trig)
 		* envAmt * (1 + accent * 1.4);
 
@@ -172,8 +172,8 @@ SynthDef(\acid303, {
 	// --- Filter (DFM1 = nice analog model) ---
 	filt = DFM1.ar(
 		preDrive,
-		(cutoff * MouseX.kr(0,1) * (1 + fenv)).clip(80, 15000), // safe range
-		(res * MouseY.kr(0,10)).clip(0.2, 2.2),
+		(cutoff * (1 + fenv)).clip(80, 15000), // safe range
+		(res ).clip(0.2,3.0),
 		drive
 	);
 
@@ -184,6 +184,37 @@ SynthDef(\acid303, {
 	Out.ar(out, postDrive * env * amp ! 2);
 }).add;
 )
+
+
+(
+~acidSeq = Pmono(
+	\acid303,
+
+	// rhythm pattern
+	\dur, Pseq(Array.fill(16, 60/120/4), inf),
+	\legato, 0.9,
+
+	// one random 16-note phrase from first 10 notes of C minor
+	\degree, Pseq({ 16.collect { [0,2,3,5,7,8,10,12,14,15].choose } }.value - 5, inf),
+	\scale, Scale.minor,
+	\octave, Pseq([3], inf),
+
+	// each param: one random 16-step pattern, repeated forever
+	\envAmt,  Pseq({ 16.collect { 2.0 } }.value, inf),
+	\cutoff,  Pseq({ 16.collect { 200 } }.value, inf),
+	\res,     Pseq({ 16.collect { 2.0 } }.value, inf),
+	// \accent,  Pseq({ 16.collect { 1.0 } }.value, inf),
+	// \accent,  Pseq({ 16.collect { [0, 1].wchoose([0.7, 0.3]) } }.value, inf),
+	\glide,   Pseq({ 16.collect { 0.1 } }.value, inf),
+	\drive,   Pseq({ 16.collect { 2.5 } }.value, inf),
+	\waveMix, Pseq({ 16.collect { 0.5 } }.value, inf),
+
+	\amp, 0.8,
+	\t_trig, 1
+).play;
+)
+
+
 (
 ~acidSeq = Pmono(
 	\acid303,
@@ -210,4 +241,5 @@ SynthDef(\acid303, {
 	\t_trig, 1
 ).play;
 )
+
 
