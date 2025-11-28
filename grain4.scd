@@ -4,13 +4,16 @@ s.waitForBoot({
 		SynthDef("fx",{
 			var rev;
 			var snd=In.ar(0,2);
-			snd = AnalogTape.ar(snd,0.9,0.9,0.7,2);
+			var follow = EnvFollow.ar(snd[0]);
+			snd = (snd + (follow*0.5)).tanh;
+			snd = LeakDC.ar(snd);
+/*			snd = AnalogTape.ar(snd,0.9,0.9,0.7,2);
 			rev = Fverb.ar(snd[0],snd[1],
 				predelay:50,
 				tail_density: LFNoise2.kr(1/3).range(50,90),
 				decay:LFNoise2.kr(1/3).range(50,90)
 			);
-			snd = SelectX.ar(LFNoise2.kr(1/3).range(0.5,0.7),[snd,rev]);
+			snd = SelectX.ar(LFNoise2.kr(1/3).range(0.5,0.7),[snd,rev]);*/
 			ReplaceOut.ar(0,snd);
 		}).add;
 

@@ -14,8 +14,9 @@ s.waitForBoot({
 });
 )
 
-l.setMixKick(1,0.25,0.5);
+l.setMixKick(0,1,0.5);
 l.setMixSnare(0,1,0);
+l.setMixCH(0.5,1);
 (
 Routine{
 	5.do({
@@ -25,15 +26,66 @@ Routine{
 }.play;
 )
 (
-Routine{
-	8.do({
-		(4.rand/4).wait;
-		l.playSnare(80,1,0,1,20000,0,0,0);
+x=Routine{
+	var j = 0;
+	var j2 = 0;
+	var jhat = 0;
+	~play_snare = "x-";
+	~play_kick = "x-------x---x-x-";
+	~accent_snare = "x--x--x--x-x-x-";
+	~accent_kick = "x---x-x---";
+	~play_hat = "x-";
+	~accent_hat = "x";
+	inf.do({ arg i;
+		var play_kick = ~play_kick[i.mod(~play_kick.size)]==$x;
+		var accent_kick = false;
+		var velocity_kick = 70;
+		var play_hat = ~play_hat[i.mod(~play_hat.size)]==$x;
+		var accent_hat = false;
+		var velocity_hat = 70;
+		var play_snare = ~play_snare[i.mod(~play_snare.size)]==$x;
+		var accent_snare = false;
+		var velocity_snare = 70;
+		if (play_snare, {
+			j = j + 1;
+			accent_snare = ~accent_snare[j.mod(~accent_snare.size)]==$x;
+		});
+		if (accent_snare,{
+			velocity_snare = 120;
+		});
+		if (play_snare,{
+			l.playSnare(velocity_snare,1,0,1,20000,0,0,0);
+		});
+		if (play_kick, {
+			j2 = j2 + 1;
+			accent_kick = ~accent_kick[j2.mod(~accent_kick.size)]==$x;
+		});
+		if (accent_kick,{
+			velocity_kick = 120;
+		});
+		if (play_kick,{
+			l.playKick(velocity_kick,1,0,1,20000,0,0,0);
+		});
+
+		if (play_hat, {
+			jhat = jhat + 1;
+			accent_hat = ~accent_hat[jhat.mod(~accent_hat.size)]==$x;
+		});
+		if (accent_hat,{
+			velocity_hat = 120;
+		});
+		if (play_hat,{
+			l.playCH(velocity_hat,2,0,1,20000,0,0,0);
+		});
+
+		(60/150/8).sleep;
 	});
-	5.do({ arg i;
-		l.playSnare(80,i/5+0.5,0,1,20000,0,0,0);
-		(0.125/4).sleep;
-	});
-	l.playSnare(120,2,0,1,20000,0,0,0);
 }.play;
 )
+~play_hat="x-x-x-";
+~accent_hat="x------x-x--x-x-x-x-x-x-";
+~play_kick = "x-------x-------";
+~accent_kick = "x-x-xx";
+~play_snare = "x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-xxxx-xx-x-";
+~accent = "x--x--x--x-x-x-xx-xx-x--x--xx-";
+x.stop;

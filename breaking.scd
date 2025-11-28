@@ -32,7 +32,7 @@ SynthDef("op",{
 		TRand.kr(0,slicesPlus,changeBeatStart).floor,
 		TRand.kr(0,slicesPlus,changeBeatStart).floor,
 	];
-	var combdelay = Demand.kr(changeBeat1,0,Drand([0,0,0,0,0,0,0,0,0,0,0,0,1],inf));
+	var combdelay = Demand.kr(changeBeat1,0,Drand([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],inf));
 	var gverb = Demand.kr(changeBeat1,0,Drand([0,0,0,0,0,0,0,0,0,0,1],inf));
 
 	rate = rate * Demand.kr(changeBeat1,0,Drand([1,1,1,1,1,1,-1],inf));
@@ -176,11 +176,11 @@ SynthDef("out",{
 	var changeBeat4=start+Changed.kr(numBeat%4<1);
 	var changeBeat16=start+Changed.kr(numBeat%16<1);
 
-	var snd  = In.ar(0,2)*Lag.kr(vol,1);
+	var snd  = In.ar(0,2)*Lag.kr(vol,60/185);
 	var sndrev = snd * Lag.kr(Demand.kr(changeBeat1,0,Drand([0,0,0,0,0,0,0,0,0,1],inf)),2);
 	rev = Fverb.ar(sndrev[0],sndrev[1],200,tail_density: LFNoise2.kr(1/3).range(50,90),decay: LFNoise2.kr(1/3).range(50,70));
 
-	snd = SelectX.ar(0.5,[snd,rev]);
+	snd = SelectX.ar(0.5+Lag.kr((1-vol)*0.5,60/185/4),[snd,rev]);
 
 	snd = RHPF.ar(snd,60,0.303);
 
@@ -198,6 +198,7 @@ f=Buffer.read(s,thisProcess.nowExecutingPath.dirname++"/RHC_120_vocal_loop_oldso
 
 o.free;
 Routine {
+	s.record;
 	s.sync;
 	~bpm_target = 180;
 	~met=Bus.audio(s,1);
@@ -231,15 +232,15 @@ Routine {
 	}.play;
 	~arp=Synth.after(x,"op",[\out,0,\busin,~met,\doDecimate,0,\bufnum,d,\bpm_source,200,\bpm_target,~bpm_target,\amp,0.9,\pan,0.0]);
 	(60/~bpm_target*32).wait;
-	~drums1=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,c,\bpm_source,170,\bpm_target,~bpm_target,\amp,0.75,\pan,0.0]);
+	~drums1=Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,c,\bpm_source,170,\bpm_target,~bpm_target,\amp,0.8,\pan,0.0]);
 	~vocals=Synth.after(x,"op",[\out,0,\busin,~met,\doDecimate,0,\bufnum,f,\bpm_source,100,\bpm_target,~bpm_target,\amp,0.8,\pan,0.0]);
 	(60/~bpm_target*32).wait;
 	~vocals.set(\amp,0);
 	~arp.set(\amp,0.5);
-	~drums1.set(\pan,-0.1);
-	~drums1.set(\amp,0.85);
-	Synth.after(x,"op",[\out,0,\busin,~met,\doDecimate,0,\bufnum,e,\bpm_source,200,\bpm_target,~bpm_target,\amp,0.85,\pan,0.0]);
-	Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,b,\bpm_source,172,\bpm_target,~bpm_target,\amp,0.9,\reverb,0.2,\pan,0.1]);
+	~drums1.set(\pan,-0.05);
+	~drums1.set(\amp,1.0);
+	Synth.after(x,"op",[\out,0,\busin,~met,\doDecimate,0,\bufnum,e,\bpm_source,200,\bpm_target,~bpm_target,\amp,1.0,\pan,0.0]);
+	Synth.after(x,"op",[\out,0,\busin,~met,\bufnum,b,\bpm_source,172,\bpm_target,~bpm_target,\amp,1,\reverb,0.2,\pan,0.0]);
 }.play;
 )
 
