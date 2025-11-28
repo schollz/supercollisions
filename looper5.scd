@@ -1,89 +1,83 @@
 (
-SynthDef(\xfadeLooper, {
-    |buf=0, rate=1.0, loopStart=0.0, loopEnd=1.0, fadeTime=0.1,
-     gate=1, amp=1, attack=0.1, release=0.1|
+SynthDef(\xfadeLooper_simple, {
+    |buf=0, rate=1, loopStart=0, loopEnd=1, fadeTime=0.1, amp=1, gate=1|
+    var sr, bufFrames, startFrame, endFrame, rateset, fadeFrames, fadeFrameBoundary;
+    var phase, phaseA, phaseB, lastPhase, loopTrig;
+    var activeHead, sig1, sig2, xfade;
+    var snd, trigA, trigB;
+    var feedbackIn;
 
-    var rateset, sr, bufFrames, startFrame, endFrame, fadeFrames;
-    var phaseA, phaseB, sigA, sigB, fadePos, xfade, env;
-    var isReverse, jumpTrig, fadeStart, fadeEnd;
-
-    rateset = rate * BufRateScale.ir(buf);
     sr = BufSampleRate.ir(buf);
     bufFrames = BufFrames.ir(buf);
-
-    // Convert loop points (fractions) into buffer frames
     startFrame = loopStart * bufFrames;
-    endFrame   = loopEnd * bufFrames;
+    endFrame = loopEnd * bufFrames;
+    rateset = rate * BufRateScale.ir(buf);
+    fadeFrames = fadeTime * sr * rate;
+    fadeFrameBoundary = endFrame - fadeFrames;
 
-    // Detect reverse if loopStart > loopEnd
-    isReverse = (loopStart > loopEnd);
+    // [activeHead, loopTrig from previous sample]
+    feedbackIn = LocalIn.ar(2);
+    activeHead = feedbackIn[0];
+    loopTrig = feedbackIn[1];
 
-    // Reverse playback if needed
-    rateset = Select.kr(isReverse, [rateset, rateset.neg]);
+    // Reset the INACTIVE head when loopTrig fires
+	// trigA is activeHead == 0
+	// trigB is activeHead == 1
+    trigA = loopTrig * (1 - activeHead);
+    trigB = loopTrig  * activeHead;
 
-    fadeFrames = fadeTime * sr;
-
-    // Main playhead
     phaseA = Phasor.ar(
-        0,
-        rateset,
-        min(startFrame, endFrame),
-        max(startFrame, endFrame),
-        isReverse.if(endFrame, startFrame) // start at correct edge
+        trig: trigA.poll(label:"trigA"),
+        rate: rateset,
+        start: startFrame,
+        end: endFrame,
     );
 
-    // Define trigger point based on direction
-    fadeStart = Select.kr(isReverse,
-        [endFrame - fadeFrames, startFrame + fadeFrames]
-    );
-
-    jumpTrig = Trig1.ar(
-        (isReverse.if(phaseA <= fadeStart, phaseA >= fadeStart)),
-        0.001
-    );
-
-    // Second head jumps only when needed
     phaseB = Phasor.ar(
-        jumpTrig,
-        rateset,
-        min(startFrame, endFrame),
-        max(startFrame, endFrame),
-        isReverse.if(endFrame, startFrame)
+        trig: trigB.poll(label:"trigB"),
+        rate: rateset,
+        start: startFrame,
+        end: endFrame.poll(label:"endFrame"),
     );
 
-    // Read buffer
-    sigA = BufRd.ar(2, buf, phaseA);
-    sigB = BufRd.ar(2, buf, phaseB);
+    phase = Select.ar(activeHead, [phaseA, phaseB]);
+    lastPhase = Delay1.ar(phase);
 
-    // Crossfade position (0–1)
-    fadePos = Select.ar(isReverse,
-        [
-            (phaseA - (endFrame - fadeFrames)) / fadeFrames,   // forward
-            ((startFrame + fadeFrames) - phaseA) / fadeFrames // reverse
-        ]
-    ).clip(0, 1).poll;
+    loopTrig = (phase >= fadeFrameBoundary.poll(label:"fadeFrameBoundary")) * (lastPhase < fadeFrameBoundary);
 
-    xfade = XFade2.ar(sigA, sigB, (fadePos * 2) - 1);
+    LocalOut.ar([ToggleFF.ar(loopTrig.poll(label:"loopTrig")), loopTrig]);
 
-    env = EnvGen.ar(Env.asr(attack, 1, release), gate, doneAction:2);
-    Out.ar(0, xfade * amp * env);
+    sig1 = BufRd.ar(2, buf, phaseA.poll(label:"phaseA"));
+    sig2 = BufRd.ar(2, buf, phaseB.poll(label:"phaseB"));
+
+	xfade = VarLag.ar(activeHead.poll(label:"activeHead"), time:fadeTime,warp:\linear);
+	snd = XFade2.ar(sig1,sig2,(2 * xfade.poll(label:"xfade")) - 1);
+
+	snd = snd * EnvGen.ar(Env.asr(fadeTime,1.0,fadeTime),gate,doneAction:2);
+
+    Out.ar(0, snd * amp);
 }).add;
 )
 
 
+
+
+(
 a=Buffer.read(s,"/home/zns/Documents/supercollisions/HGAT_120_alt_drum_loop_granular_key_bpm120_beats16_.flac");
 c=Buffer.read(s,"/home/zns/Documents/supercollisions/ff_ma_130_synth_loop_distorted_Cmin_key_bpm200_130_beats32_.flac");
 e=Buffer.read(s,"/home/zns/Documents/supercollisions/SO_DRR_104_choir_Epic_Cm_key_bpm200_104_beats16_.flac");
-b=Synth(\xfadeLooper,[\buf,a,\loopStart,0,\loopEnd,0.5,\fadeTime,1.0,\rate,175/120]);
-d=Synth(\xfadeLooper,[\buf,c,\loopStart,0,\loopEnd,0.5,\fadeTime,1.0,\rate,175/100]);
-f=Synth(\xfadeLooper,[\buf,e,\loopStart,0,\loopEnd,0.5,\fadeTime,1.0,\rate,175/200]);
-
+)
 (
 b.set(\gate,0);
 d.set(\gate,0);
 f.set(\gate,0);
-b=Synth(\xfadeLooper,[\buf,a,\loopStart,0.0,\loopEnd,0.5,\fadeTime,0.01,\rate,175/120]);
-// d=Synth(\xfadeLooper,[\buf,c,\loopStart,0,\loopEnd,1.0,\fadeTime,1.0,\rate,175/200]);
-// f=Synth(\xfadeLooper,[\buf,e,\loopStart,0,\loopEnd,1.0,\fadeTime,1.0,\rate,175/200]);
+b=Synth(\xfadeLooper_simple,[\buf,a,\loopStart,0.25,\loopEnd,0.25+0.5,\fadeTime,0.05,\rate,130/120]);
+d=Synth(\xfadeLooper_simple,[\buf,c,\loopStart,0+0.25,\loopEnd,0.5+0.25,\fadeTime,0.05,\rate,130/100]);
+f=Synth(\xfadeLooper_simple,[\buf,e,\loopStart,0.5,\loopEnd,0.5+0.125,\fadeTime,0.05,\rate,130/200]);
 )
 
+
+
+b=Synth(\xfadeLooper,[\buf,a,\loopStart,0,\loopEnd,0.5,\fadeTime,1.0,\rate,175/120]);
+d=Synth(\xfadeLooper,[\buf,c,\loopStart,0,\loopEnd,0.5,\fadeTime,1.0,\rate,175/100]);
+f=Synth(\xfadeLooper,[\buf,e,\loopStart,0,\loopEnd,0.5,\fadeTime,1.0,\rate,175/200]);
